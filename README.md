@@ -1,4 +1,4 @@
-![Go](https://github.com/etf1/kafka-transformer/workflows/Go/badge.svg)
+![Go](https://github.com/etf1/kafka-message-scheduler/workflows/Go/badge.svg)
 
 # Kafka message scheduler
 
