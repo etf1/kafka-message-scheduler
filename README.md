@@ -1,3 +1,5 @@
+![Go](https://github.com/etf1/kafka-transformer/workflows/Go/badge.svg)
+
 # Kafka message scheduler
 
 Kafka message scheduler allows you to send message to a target topic on a specific time with a particular payload.
