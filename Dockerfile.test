@@ -1,0 +1,11 @@
+FROM golang:alpine
+
+RUN apk update && apk add --no-cache gcc libc-dev git bash make curl kafkacat
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.33.0
+RUN golangci-lint --version
+
+RUN mkdir -p /scheduler/tests
+
+WORKDIR /scheduler/tests
+
+COPY . .
