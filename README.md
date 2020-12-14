@@ -4,29 +4,28 @@ Kafka message scheduler allows you to send message to a target topic on a specif
 
 # Why ?
 
-You always need to trigger events in the future to do something and when you are using kafka in your company for data processing, you want to trigger this processing based on message received in a specific topic.
+You always need to trigger events to do something and when you are using kafka in your company for data processing, you want to trigger this processing based on kafka message.
 
 # Use cases
 
-You can find many use cases, but you have one very trivial : trigger an event in the future.
-For example, on the TF1 website videos are put online at a specific time and put offline at another specific time.
+For example, on the TF1 website, videos are set online on a given date and set offline on another date.
 We are using kafka consumers on specific topic to perform this activation/deactivation.
 
-Another use case is retriable actions. For example when you are consuming message of a topic and sending a specific action to an external API, this service can be down temporarily. So failed messages can be scheduled for the scheduler to be retried in the future. Of course you have to make sure of idempotence, based for example on the original timestamp.
+Another use case is retriable actions. For example when you are using messages of a topic for  performing action to an external API. This service can be down temporarily. So in this case failed messages can be rescheduled for a retry by the scheduler. Of course you have to make sure of idempotence, based on the original timestamp.
 
-You can also imagine to use the scheduler to delete inactive user, each time a user logins you put a message in the scheduler to be triggered in 1 year. And if the user didn't login for a long time the scheduled message will be triggered and the user deleted.
+You can also imagine to use the scheduler to delete inactive user, each time a user logins you schedule an event with a date now + 1year. And if the user didn't login for a long time the scheduled message will be triggered and the user can be deleted by a specific consumer.
 
-A lot of use cases can be found...depends on your imagination
+A lot of use cases can be found... it depends on your imagination ;)
 
 # How does it work ?
 
-Kafka message scheduler is simply based on incoming topics. These topics contains all the schedules to trigger. These messages are regular kafka messages with headers and a payload. But it should contains specific header:
+Kafka message scheduler is simply using kafka topics. These topics contains all the schedules to trigger. These messages are regular kafka messages with headers and a payload. But it should contains specific headers:
 
-* scheduler-epoch: the time in epoch (number of second since 1970) for the schedule
+* scheduler-epoch: the date of the schedule in epoch (number of second since 1970)
 * scheduler-target-topic: the topic to send the message to
-* scheduler-target-key: the key to use when sending the triggered message to the target topic
+* scheduler-target-key: the key to use when sending the triggered schedule to the target topic
 
-That is all you need, the paylaod will used as defined in the schedule message.
+That is all you need, the paylaod will be the one defined in the schedule message.
 Warning: if the payload of the message changes, a new schedule message should be send to the scheduler topic.
 
 Example:
@@ -61,7 +60,7 @@ For GO there is a clientlib for wrapping your kafka messages, check [clientlib](
 
 # High availability
 
-You can launch multiple instance of the scheduler, schedules will be load balanced and for large schedules topic reduce the memory pressure. Scheduler can work with several incoming schedules topics, but schedules must have uniq key accross all these topics.
+You can launch multiple instance of the scheduler, schedules will be load balanced and for large schedules topic this will reduce the memory pressure on each scheduler instance. Scheduler can work with several incoming topics, but schedules must have uniq key accross all these topics.
 
 # Fail over
 
@@ -69,7 +68,7 @@ If a scheduler crashed or is down for long period of time, it will resynch all s
 
 # Observability
 
-The scheduler is exposing metrics on a specific port (8001 by default) at the URI /metrics. It can be used by a prometheus server for scrapping metrics. Available metrics are the number of missed, invalid, deleted, planned and triggered schedules.
+The scheduler is exposing metrics on a specific port (8001 by default) at the URI /metrics. It can be used by a prometheus server for scrapping metrics. Available metrics are the number of missed, invalid, deleted, planned and triggered schedules. The metric name is `kafka_scheduler_event_total`.
 
 # Configuration
 
@@ -114,7 +113,7 @@ kafkaRunner.Close()
 
 # Schedules topics
 
-The topic used by the scheduler has to be compact and retention unlimited otherwise you will loose schedules. 
+The topic used by the scheduler has to be compacted and retention unlimited otherwise you will loose schedules. 
 If you plan to run multiple instances of the scheduler for example 3, you need at least 3 partitions in the topic.
 
 ```

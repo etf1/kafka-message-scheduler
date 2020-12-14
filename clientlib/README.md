@@ -3,9 +3,13 @@
 This module will helps you wrap a confluent.Message as scheduler message.
 It will not send the message to the scheduler's topic, just preparing the message to be produced.
 
-* To create a new schedule event
+* To create a new schedule
 
 ```
+import(
+    "github.com/etf1/kafka-message-scheduler/clientlib"
+)
+
 key := "video1"
 targetTopic := "target-topic"
 schedulerTopic := "scheduler-topic"
@@ -29,9 +33,13 @@ if err != nil {
 }
 ```
 
-*  To delete a schedule event
+*  To delete a schedule
 
 ```
+import(
+    "github.com/etf1/kafka-message-scheduler/clientlib"
+)
+
 key := "video1"
 targetTopic := "target-topic"
 schedulerTopic := "scheduler-topic"
