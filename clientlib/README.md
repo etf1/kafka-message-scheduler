@@ -3,7 +3,7 @@
 This module will helps you wrap a confluent.Message as scheduler message.
 It will not send the message to the scheduler's topic, just preparing the message to be produced.
 
-* To create a new schedule
+* To create/update a schedule
 
 ```
 import(
