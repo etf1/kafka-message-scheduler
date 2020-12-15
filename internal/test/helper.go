@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	adminTimeout   = 120 * time.Second
 	timeout        = 10 * time.Second
 	randomN        = 1000000
 	pollTimeoutMs  = 100
@@ -84,7 +85,7 @@ func CreateTopics(t *testing.T, nbTopic int, nbPartitions []int, prefix string) 
 			ReplicationFactor: replicationFactor}
 	}
 
-	results, err := adm.CreateTopics(ctx, specs, confluent.SetAdminOperationTimeout(timeout))
+	results, err := adm.CreateTopics(ctx, specs, confluent.SetAdminOperationTimeout(adminTimeout))
 	if err != nil {
 		t.Fatalf("failed to create topics %v: %v", topics, err)
 	}
