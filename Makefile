@@ -22,7 +22,7 @@ lint:
 	golangci-lint --build-tags musl run
 
 tests: #build lint
-	echo "WWWWWWWWWW"
+	echo "WWWWWWWWWWWW"
 	cat "/proc/self/cgroup"
 	go test -v -tags musl -race -count=1 ./... -run=^NONE
 
