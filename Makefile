@@ -21,13 +21,8 @@ run:
 lint:
 	golangci-lint --build-tags musl run
 
-tests: #build lint
-	echo "WWWWWWWWWWWW"
-	cat "/proc/self/cgroup"
-	cat "/proc/1/cgroup"
-	ls -al /
-	exit
-	go test -v -tags musl -race -count=1 ./... -run=^NONE
+tests: build lint
+	go test -v -tags musl -race -count=1 ./store/kafka/...
 
 tests.docker:
 	docker-compose -p tests build tests
