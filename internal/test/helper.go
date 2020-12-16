@@ -7,13 +7,10 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"math/big"
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -32,17 +29,11 @@ const (
 
 // tells if the tests is running in docker
 func isRunningInDocker() bool {
-	if _, err := os.Stat("/proc/self/cgroup"); os.IsNotExist(err) {
+	if _, err := os.Stat("/.dockerenv"); os.IsNotExist(err) {
 		return false
 	}
 
-	content, err := ioutil.ReadFile("/proc/self/cgroup")
-	if err != nil {
-		log.Print(err)
-		return false
-	}
-
-	return strings.Contains(string(content), "docker")
+	return true
 }
 
 func NewKafkaStore(t *testing.T, nbTopic int, nbPartitions []int) (store *kafka_store.Store, topics []string) {
@@ -116,10 +107,10 @@ func RandomTopicName(prefix string) string {
 // Get the bootstrap servers because in or out the docker the kafka server is different
 func GetBootstrapServers() string {
 	if isRunningInDocker() {
-		fmt.Printf("@@@@@@@@@@@@ bootstrap servers=kafka:29092")
+		fmt.Println("kafka bootstrap servers=kafka:29092")
 		return "kafka:29092"
 	}
-	fmt.Printf("@@@@@@@@@@@@ bootstrap servers=localhost:9092")
+	fmt.Println("kafka bootstrap servers=localhost:9092")
 	return "localhost:9092"
 }
 
