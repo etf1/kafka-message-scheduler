@@ -25,6 +25,8 @@ tests: build lint
 	go test -v -tags musl -race -count=1 ./...
 
 tests.docker:
+	echo "WWWWWWWWWW"
+	cat "/proc/self/cgroup"
 	docker-compose -p tests build tests
 	docker-compose -p tests up tests | tee ${TMPDIR}/tests.result
 	docker-compose -p tests down
