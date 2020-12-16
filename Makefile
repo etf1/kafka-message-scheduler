@@ -24,7 +24,7 @@ lint:
 tests: #build lint
 	echo "WWWWWWWWWW"
 	cat "/proc/self/cgroup"
-	go test -v -tags musl -race -count=1 ./... -run=^NONE 
+	go test -v -tags musl -race -count=1 ./... -run=^NONE
 
 tests.docker:
 	docker-compose -p tests build tests
