@@ -1,4 +1,4 @@
-module github.com/etf1/kafka-scheduler/clientlib
+module github.com/etf1/kafka-message-scheduler/clientlib
 
 go 1.15
 
