@@ -25,6 +25,7 @@ tests: #build lint
 	echo "WWWWWWWWWWWW"
 	cat "/proc/self/cgroup"
 	cat "/proc/1/cgroup"
+	ls -al /
 	go test -v -tags musl -race -count=1 ./... -run=^NONE
 
 tests.docker:
