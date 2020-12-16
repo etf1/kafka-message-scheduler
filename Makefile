@@ -22,7 +22,7 @@ lint:
 	golangci-lint --build-tags musl run
 
 tests: build lint
-	go test -v -tags musl -race -count=1 ./store/kafka/...
+	go test -v -tags musl -race -count=1 ./...
 
 tests.docker:
 	docker-compose -p tests build tests
