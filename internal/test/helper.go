@@ -116,8 +116,10 @@ func RandomTopicName(prefix string) string {
 // Get the bootstrap servers because in or out the docker the kafka server is different
 func GetBootstrapServers() string {
 	if isRunningInDocker() {
+		fmt.Printf("@@@@@@@@@@@@ bootstrap servers=kafka:29092")
 		return "kafka:29092"
 	}
+	fmt.Printf("@@@@@@@@@@@@ bootstrap servers=localhost:9092")
 	return "localhost:9092"
 }
 
