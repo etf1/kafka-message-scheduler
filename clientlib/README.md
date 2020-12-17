@@ -3,60 +3,64 @@
 This module will helps you wrap a confluent.Message as scheduler message.
 It will not send the message to the scheduler's topic, just preparing the message to be produced.
 
-* To create/update a schedule
+## To create or update a scheduled message
 
-```
+```go
+package main
+
 import(
     "github.com/etf1/kafka-message-scheduler/clientlib"
 )
 
-key := "video1"
+func main() {
+    targetTopic := "target-topic"
+
+    now := time.Now()
+    later := now.Add(1 * time.Hour).Unix()
+
+    msg := kafka.Message{
+        Key: []byte("video1"),
+        Timestamp:     now,
+        TimestampType: kafka.TimestampCreateTime,
+        Value:         []byte("some value"),
+        TopicPartition: kafka.TopicPartition{
+            Topic: &targetTopic,
+        },
+    }
+
+    schedulerMessage, err := clientlib.Schedule(&msg, "video1-schedule-online", later, "scheduler-topic")
+    if err != nil {
+        log.Printf("unexpected error: %v", err)
+    }
+
+    producer, err := kafka.NewProducer(&kafka.ConfigMap{
+        "bootstrap.servers": "localhost:9092",
+    })
+    if err != nil {
+        log.Printf("error while initializing producer: %v", err)
+    }
+
+    producer.Produce(schedulerMessage, nil)    
+    producer.Close()
+}
+```
+
+##  To delete a scheduled message
+
+```go
 targetTopic := "target-topic"
-schedulerTopic := "scheduler-topic"
-scheduleID := "video1-schedule-online"
-later := time.Now().Add(1 * time.Hour).Unix()
 
 msg := kafka.Message{
-    Key: bytes(key),
-    Timestamp:     now,
+    Key: []byte("video1"),
+    Timestamp:     time.Now(),
     TimestampType: kafka.TimestampCreateTime,
-    Value:         bytes("some value"),
+    Value:         []byte("some value"),
     TopicPartition: kafka.TopicPartition{
         Topic: &targetTopic,
     },
 }
 
-result, err := clientlib.Schedule(&msg, scheduleID, later, schedulerTopic)
-
-if err != nil {
-    log.Printf("unexpected error: %v", err)
-}
-```
-
-*  To delete a schedule
-
-```
-import(
-    "github.com/etf1/kafka-message-scheduler/clientlib"
-)
-
-key := "video1"
-targetTopic := "target-topic"
-schedulerTopic := "scheduler-topic"
-scheduleID := "video1-schedule-online"
-
-msg := kafka.Message{
-    Key: bytes(key),
-    Timestamp:     now,
-    TimestampType: kafka.TimestampCreateTime,
-    Value:         bytes("some value"),
-    TopicPartition: kafka.TopicPartition{
-        Topic: &targetTopic,
-    },
-}
-
-result, err := clientlib.DeleteSchedule(scheduleID, schedulerTopic)
-
+result, err := clientlib.DeleteSchedule("video1-schedule-online", "scheduler-topic")
 if err != nil {
     log.Printf("unexpected error: %v", err)
 }
