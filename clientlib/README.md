@@ -48,20 +48,27 @@ func main() {
 ##  To delete a scheduled message
 
 ```go
-targetTopic := "target-topic"
 
-msg := kafka.Message{
-    Key: []byte("video1"),
-    Timestamp:     time.Now(),
-    TimestampType: kafka.TimestampCreateTime,
-    Value:         []byte("some value"),
-    TopicPartition: kafka.TopicPartition{
-        Topic: &targetTopic,
-    },
-}
+package main
 
-result, err := clientlib.DeleteSchedule("video1-schedule-online", "scheduler-topic")
-if err != nil {
-    log.Printf("unexpected error: %v", err)
+import(
+    "github.com/etf1/kafka-message-scheduler/clientlib"
+)
+
+func main() {
+    schedulerMessage, err := clientlib.DeleteSchedule("video1-schedule-online", "scheduler-topic")
+    if err != nil {
+        log.Printf("unexpected error: %v", err)
+    }
+
+    producer, err := kafka.NewProducer(&kafka.ConfigMap{
+        "bootstrap.servers": "localhost:9092",
+    })
+    if err != nil {
+        log.Printf("error while initializing producer: %v", err)
+    }
+
+    producer.Produce(schedulerMessage, nil)    
+    producer.Close()
 }
 ```
