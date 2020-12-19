@@ -21,7 +21,7 @@ const (
 	OriginalTimestamp = "scheduler-timestamp"
 	// OriginalKey stores the original schedule key
 	OriginalKey = "scheduler-key"
-	// OriginalKey stores the scheduler topic where it came from
+	// OriginalTopic stores the scheduler topic where it came from
 	OriginalTopic = "scheduler-topic"
 
 	flushTimeoutMs = 10000
