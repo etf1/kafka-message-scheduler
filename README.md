@@ -89,13 +89,19 @@ The scheduler can be configured with environment variables:
 
 You can use kafka message scheduler with docker or as code in your go program:
 
+* go run :
+
+```
+BOOTSTRAP_SERVERS="kafka:9092" go run ./cmd/kafka
+```
+
 * docker run :
 
 ```
 docker run -e BOOTSTRAP_SERVERS="kafka:9092" etf1/kafka-message-scheduler
 ```
 
-* as code:
+* as code in your go program:
 
 ```
 import(
