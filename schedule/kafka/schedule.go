@@ -73,5 +73,5 @@ func (s Schedule) Epoch() int64 {
 }
 
 func (s Schedule) String() string {
-	return fmt.Sprintf("{id:%v epoch:%v date:%v}", s.ID(), s.Epoch(), time.Unix(s.Epoch(), 0))
+	return fmt.Sprintf("{id:'%v' epoch:%v date:%v ts:%v}", s.ID(), s.Epoch(), time.Unix(s.Epoch(), 0), time.Unix(s.Timestamp(), 0))
 }

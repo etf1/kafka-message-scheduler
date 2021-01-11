@@ -61,10 +61,13 @@ func (sch Scheduler) GetPlannedSchedules() []schedule.Schedule {
 func (sch Scheduler) addToTimers(s schedule.Schedule) {
 	errs := sch.Timers.Add(s)
 	if len(errs) > 0 {
+		log.Debugf("add to timers failed: %+v %v", s, errs)
 		sch.events <- schedule.InvalidSchedule{
 			Schedule: s,
 			Errors:   errs,
 		}
+	} else {
+		log.Debugf("added to timers: %+v", s)
 	}
 }
 
@@ -75,6 +78,7 @@ func (sch Scheduler) processMissedEvent(e Event) {
 		sch.events <- evt
 		sch.Inc(instrument.MissedSchedule)
 	case schedule.Schedule:
+		log.Debugf("from missed events: %+v", evt)
 		sch.addToTimers(evt)
 		sch.Inc(instrument.PlannedSchedule)
 	default:
@@ -110,6 +114,7 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 		if sch.Get(evt.ID()) != nil && !inRange {
 			sch.Delete(evt)
 		} else if inRange {
+			log.Debugf("from store events: %+v", evt)
 			sch.addToTimers(evt)
 			sch.Inc(instrument.PlannedSchedule)
 		}
@@ -141,7 +146,7 @@ func (sch Scheduler) Start(since time.Time) {
 		defer close(sch.events)
 
 		// process incoming events from timers, store, missed events
-		log.Printf("scheduler started, missed schedules since=%v\n", since)
+		log.Printf("scheduler started, missed schedules since=%v", since)
 
 	loop:
 		for {

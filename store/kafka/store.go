@@ -56,7 +56,7 @@ func NewStore(bootstrapServers string, topics []string, groupID string, sessionT
 	}
 	err = consumer.SubscribeTopics(topics, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot subscribe to topics %q: %w", topics, err)
+		return nil, fmt.Errorf("cannot subscribe to topics '%s': %w", topics, err)
 	}
 
 	resetTicker := newResetTicker()
@@ -145,7 +145,7 @@ func (ks *Store) processMessage() {
 			},
 		}
 	default:
-		log.Printf("Ignored: %+v\n", e)
+		log.Printf("Ignored: %+v", e)
 	}
 }
 
@@ -158,6 +158,7 @@ func (ks *Store) Events() chan store.Event {
 	resetTicks := ks.resetTicker.ticks()
 
 	go func() {
+		defer log.Printf("kafka store event loop exited ...")
 		for {
 			select {
 			case <-ks.stopChan:

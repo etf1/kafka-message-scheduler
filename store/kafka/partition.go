@@ -36,27 +36,27 @@ import (
 // partition 1 was already in our scope so no offset reset
 
 func (ks *Store) reset() error {
-	log.Printf("reset currently assigned=%v\n", ks.assigned.Partitions)
+	log.Printf("reset currently assigned=%v", ks.assigned.Partitions)
 
 	for i := range ks.assigned.Partitions {
 		tp := ks.assigned.Partitions[i]
 		ks.assigned.Partitions[i].Offset = 0
-		log.Printf("resetting offset to 0 for %+v\n", tp)
+		log.Printf("resetting offset to 0 for %+v", tp)
 	}
-	log.Printf("calling assign %v with %v\n", ks.Consumer, ks.assigned.Partitions)
+	log.Printf("calling assign %v with %v", ks.Consumer, ks.assigned.Partitions)
 	return ks.Assign(ks.assigned.Partitions)
 }
 
 func (ks *Store) revoke(revoked kafka.RevokedPartitions) error {
 	ks.revoked = revoked
-	log.Printf("revoke paritions=%v with current assigned=%v\n", ks.revoked.Partitions, ks.assigned.Partitions)
+	log.Printf("revoke paritions=%v with current assigned=%v", ks.revoked.Partitions, ks.assigned.Partitions)
 	return ks.Unassign()
 }
 
 func (ks *Store) assign(assigned kafka.AssignedPartitions) error {
 	ks.assigned = assigned
 
-	log.Printf("assign partitions=%v with current revoked=%v\n", ks.assigned.Partitions, ks.revoked.Partitions)
+	log.Printf("assign partitions=%v with current revoked=%v", ks.assigned.Partitions, ks.revoked.Partitions)
 
 	// find deleted partitions : revoked partitions which are not in assigned list
 	deleted := minus(ks.revoked.Partitions, ks.assigned.Partitions)
@@ -85,10 +85,10 @@ func (ks *Store) assign(assigned kafka.AssignedPartitions) error {
 			// partitions not new keep the existing offset
 			if isIn(tp, added) {
 				ks.assigned.Partitions[i].Offset = 0
-				log.Printf("resetting offset to 0 for %+v\n", tp)
+				log.Printf("resetting offset to 0 for %+v", tp)
 			}
 		}
-		log.Printf("calling assign %v with %v\n", ks.Consumer, ks.assigned.Partitions)
+		log.Printf("calling assign %v with %v", ks.Consumer, ks.assigned.Partitions)
 		return ks.Assign(ks.assigned.Partitions)
 	}
 
