@@ -77,17 +77,17 @@ func NewHandler(bootstrapServers, historyTopic string) (EventHandler, error) {
 				if topic(ev) != historyTopic && !emptyValue(ev) {
 					err := k.produceTombstoneMessage(ev)
 					if err != nil {
-						log.Errorf("unable to produce tombstone message with id %q: %v\n", key(ev), err)
+						log.Errorf("unable to produce tombstone message with id '%s': %v", key(ev), err)
 					}
 					err = k.produceHistoryMessage(ev)
 					if err != nil {
-						log.Errorf("unable to produce history message with id %q: %v\n", key(ev), err)
+						log.Errorf("unable to produce history message with id '%s': %v", key(ev), err)
 					}
 				}
 			case confluent.Error:
-				log.Errorf("received an error with code %v: %v\n", ev.Code(), ev)
+				log.Errorf("received an error with code %v: %v", ev.Code(), ev)
 			default:
-				log.Errorf("ignoring event: %s\n", ev)
+				log.Errorf("ignoring event: %s", ev)
 			}
 		}
 	}()
@@ -104,7 +104,7 @@ func (k EventHandler) Close() {
 }
 
 func (k EventHandler) String() string {
-	return fmt.Sprintf("kafka handler history_topic=%v\n", k.historyTopic)
+	return fmt.Sprintf("kafka handler history_topic=%v", k.historyTopic)
 }
 
 // store in a specific topic the triggered messages
@@ -117,7 +117,7 @@ func (k EventHandler) produceHistoryMessage(msg *confluent.Message) error {
 		Headers:        headers,
 	}
 
-	log.Debugf("producing history message with id %q on topic %q\n", string(msg.Key), k.historyTopic)
+	log.Debugf("producing history message with id '%s' on topic '%s'", string(msg.Key), k.historyTopic)
 
 	return k.producer.Produce(&historyMsg, nil)
 }
@@ -161,7 +161,7 @@ func (k EventHandler) produceTombstoneMessage(msg *confluent.Message) error {
 		Headers: headers,
 	}
 
-	log.Debugf("producing tombstone message with id %q on topic %q\n", originalKey, originalTopic)
+	log.Debugf("producing tombstone message with id '%s' on topic '%s'", originalKey, originalTopic)
 
 	return k.producer.Produce(&tombstoneMsg, nil)
 }
@@ -205,7 +205,7 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 		headers: targetMsg.Headers,
 	}
 
-	log.Debugf("producing target message with id %q on topic %q\n", msg.TargetKey(), targetTopic)
+	log.Debugf("producing target message with id '%s' on topic '%s'", msg.TargetKey(), targetTopic)
 
 	return k.producer.Produce(&targetMsg, nil)
 }
@@ -213,30 +213,30 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 func (k EventHandler) Handle(event scheduler.Event) {
 	switch evt := event.(type) {
 	case schedule.InvalidSchedule:
-		log.Debugf("received an InvalidSchedule event: %T %+v errors=%v\n", evt, evt, evt.Errors)
+		log.Debugf("received an InvalidSchedule event: %T %+v errors=%v", evt, evt, evt.Errors)
 	case schedule.MissedSchedule:
-		log.Debugf("received a MissedSchedule event: %T %v\n", evt, evt)
+		log.Debugf("received a MissedSchedule event: %T %v", evt, evt)
 		msg, ok := evt.Schedule.(kafka.Schedule)
 		if !ok {
-			log.Errorf("event is not a kafka.Schedule: %T %+v\n", event, event)
+			log.Errorf("event is not a kafka.Schedule: %T %+v", event, event)
 			break
 		}
 		err := k.produceTargetMessage(msg)
 		if err != nil {
-			log.Errorf("unable to produce the message: %v %v\n", err, msg)
+			log.Errorf("unable to produce the message: %v %v", err, msg)
 		}
 	case schedule.Schedule:
-		log.Printf("received a regular schedule event: %T %v\n", evt, evt)
+		log.Printf("received a triggered schedule event: %T %v", evt, evt)
 		msg, ok := evt.(kafka.Schedule)
 		if !ok {
-			log.Errorf("event is not a kafka.Schedule: %T %+v\n", event, event)
+			log.Errorf("event is not a kafka.Schedule: %T %+v", event, event)
 			break
 		}
 		err := k.produceTargetMessage(msg)
 		if err != nil {
-			log.Errorf("unable to produce the message: %v %v\n", err, msg)
+			log.Errorf("unable to produce the message: %v %v", err, msg)
 		}
 	default:
-		log.Errorf("unexpected event type: %T %v\n", evt, evt)
+		log.Errorf("unexpected event type: %T %v", evt, evt)
 	}
 }
