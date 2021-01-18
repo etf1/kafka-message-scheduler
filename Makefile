@@ -11,6 +11,10 @@ dev.down:
 build:
 	go build -tags musl -v ./...
 
+builds:
+	$(MAKE) build
+	cd clientlib && $(MAKE) build -f ../Makefile
+
 .PHONY: bin
 bin:
 	go build ${LDFLAGS} -tags musl -v -o bin/kafka-scheduler ./cmd/kafka
@@ -21,8 +25,16 @@ run:
 lint:
 	golangci-lint --build-tags musl run
 
-tests: build lint
+lints:
+	$(MAKE) lint
+	cd clientlib && $(MAKE) lint -f ../Makefile
+
+test:
 	go test -v -tags musl -race -count=1 ./...
+
+tests: builds lints
+	$(MAKE) test
+	cd clientlib && $(MAKE) test -f ../Makefile
 
 tests.docker:
 	docker-compose -p tests build tests
