@@ -756,3 +756,46 @@ loop:
 		t.Fatalf("unexpected collected count for triggered")
 	}
 }
+
+// Test issue #8 : https://github.com/etf1/kafka-message-scheduler/issues/8
+func TestScheduler_issue8(t *testing.T) {
+	store := hmap.New()
+	coll := hmapcoll.New()
+
+	startOfToday := scheduler.StartOfToday()
+	s := scheduler.New(store, coll)
+	defer s.Close()
+
+	s.Start(startOfToday)
+
+	now := time.Now()
+	max := 25
+	for i := 1; i <= max; i++ {
+		store.Add(simpleSchedule("1", now))
+		time.Sleep(1 * time.Millisecond)
+	}
+
+	events := s.Events()
+
+	result := make([]ReceivedEvent, 0)
+loop:
+	for {
+		select {
+		case evt := <-events:
+			epoch := time.Now().Unix()
+			t.Logf("received %T %v\n", evt, evt)
+			result = append(result, ReceivedEvent{
+				evt,
+				epoch,
+			})
+		case <-time.After(5 * time.Second):
+			break loop
+		}
+	}
+
+	printReceivedEvents(t, result)
+
+	if len(result) != 25 {
+		t.Fatalf("unexpected result length: %v", len(result))
+	}
+}

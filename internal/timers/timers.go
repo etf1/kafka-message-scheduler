@@ -61,8 +61,10 @@ func (ts Timers) Add(s schedule.Schedule) []error {
 	// if found, we stop the existing timer
 	if t, ok := ts.items[s.ID()]; ok {
 		if !t.Stop() {
-			// TODO add a timeout
-			<-t.C
+			select {
+			case <-t.C:
+			default:
+			}
 		}
 	}
 
@@ -109,8 +111,10 @@ func (ts Timers) Delete(s schedule.Schedule) {
 func (ts Timers) deleteItem(id string) {
 	if t, ok := ts.items[id]; ok {
 		if !t.Stop() {
-			// TODO non blocking
-			<-t.C
+			select {
+			case <-t.C:
+			default:
+			}
 		}
 		delete(ts.items, id)
 	}
@@ -130,8 +134,10 @@ func (ts Timers) DeleteAll() {
 
 	for _, t := range ts.items {
 		if !t.Stop() {
-			// TODO non blocking
-			<-t.C
+			select {
+			case <-t.C:
+			default:
+			}
 		}
 		delete(ts.items, t.ID())
 	}
