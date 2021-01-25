@@ -213,9 +213,9 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 func (k EventHandler) Handle(event scheduler.Event) {
 	switch evt := event.(type) {
 	case schedule.InvalidSchedule:
-		log.Debugf("received an InvalidSchedule event: %T %+v errors=%v", evt, evt, evt.Errors)
+		log.Printf("received an InvalidSchedule event: %T %+v errors=%v", evt, evt, evt.Errors)
 	case schedule.MissedSchedule:
-		log.Debugf("received a MissedSchedule event: %T %v", evt, evt)
+		log.Printf("received a MissedSchedule event: %T %v", evt, evt)
 		msg, ok := evt.Schedule.(kafka.Schedule)
 		if !ok {
 			log.Errorf("event is not a kafka.Schedule: %T %+v", event, event)
