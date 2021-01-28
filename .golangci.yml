@@ -80,7 +80,6 @@ linters:
     - golint
     - gomnd
     - goprintffuncname
-    - gosec
     - gosimple
     - govet
     - ineffassign
@@ -108,6 +107,13 @@ linters:
   # - godot
   # - godox
   # - goerr113
+
+  # Following rule is disabled because of:
+  # retry/strategy_backoff.go:60:10: G404: Use of weak random number generator (math/rand instead of crypto/rand) (gosec)
+  # durf = rand.Float64()*(durf-minf) + minf
+  # It cannot be satisfied because crypto/rand does not expose a method to random a float number...
+  # - gosec
+
   # - maligned
   # - nestif
   # - prealloc
