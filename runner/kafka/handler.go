@@ -167,7 +167,7 @@ func (k EventHandler) produceTombstoneMessage(msg *confluent.Message) error {
 }
 
 // in the confluent go lib, in the delivery channel, the original timestamp and headers
-// are not available, so we need to passt them hrough via the Opaque field
+// are not available, so we need to pass them through via the Opaque field
 type HandlerOpaque struct {
 	headers []confluent.Header
 }
