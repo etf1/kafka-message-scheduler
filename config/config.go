@@ -40,8 +40,8 @@ func GraylogServer() string {
 	return getString("GRAYLOG_SERVER", "")
 }
 
-func MetricsHTTPPort() string {
-	return getString("METRICS_HTTP_PORT", "8001")
+func MetricsHTTPAddr() string {
+	return getString("METRICS_HTTP_ADDR", ":8001")
 }
 
 func BootstrapServers() string {

@@ -82,7 +82,7 @@ The scheduler can be configured with environment variables:
 | SCHEDULES_TOPICS  | schedules      | Topic list for incoming schedules separated by comma                                         |
 | SINCE_DELTA       | 0              | Number of days to go back for considering missed schedules (0:today, -1: yesterday, etc ...) |
 | GROUP_ID          | scheduler-cg   | Consumer group id for the scheduler consumer                                                 |
-| METRICS_HTTP_PORT | 8001           | HTTP port where prometheus metrics will be exposed (URI /metrics)                            |
+| METRICS_HTTP_ADDR | :8001          | HTTP address where prometheus metrics will be exposed (URI /metrics)                         |
 | HISTORY_TOPIC     | history        | Topic name where a copy of triggered schedules will be kept for auditing                     |
 
 # Usage
