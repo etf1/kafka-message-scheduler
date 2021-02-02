@@ -2,7 +2,6 @@ package prometheus
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -23,17 +22,17 @@ type Collector struct {
 }
 
 // NewCollector create a prometheus collector
-func NewCollector(port string) Collector {
+func NewCollector(addr string) Collector {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/metrics", promhttp.Handler().ServeHTTP)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%s", port),
+		Addr:    addr,
 		Handler: mux,
 	}
 
 	go func() {
-		log.Printf("prometheus metrics available on 0.0.0.0:%s/metrics", port)
+		log.Printf("prometheus metrics available on %s/metrics", addr)
 		if err := srv.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
 				log.Error(err)

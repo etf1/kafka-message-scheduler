@@ -47,7 +47,7 @@ type Runner struct {
 }
 
 func DefaultCollector() prometheus.Collector {
-	return prometheus.NewCollector(config.MetricsHTTPPort())
+	return prometheus.NewCollector(config.MetricsHTTPAddr())
 }
 
 func DefaultConfig() Config {
