@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -87,26 +88,22 @@ func (sch Scheduler) processMissedEvent(e Event) {
 	}
 }
 
-// processMissedEvent process store events
-func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvents chan store.Event) {
-	if time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond {
-		coldEvents <- e
-		return
-	}
+// processStoreEvent process events coming from the store
+func (sch Scheduler) processStoreEvent(since time.Time, e store.Event) {
 	switch evt := e.(type) {
 	case schedule.InvalidSchedule:
 		sch.events <- evt
 		sch.Inc(instrument.InvalidSchedule)
 	case schedule.DeleteSchedules:
 		sch.Timers.DeleteByFunc(evt.DeleteFunc)
-		if sch.missedEvents.length() > 0 {
-			coldEvents <- evt
-		}
+		// if sch.missedEvents.length() > 0 {
+		// 	coldEvents <- evt
+		// }
 	case schedule.DeletedSchedule:
 		sch.Timers.Delete(evt)
-		if sch.missedEvents.contains(evt.Schedule) {
-			coldEvents <- evt
-		}
+		// if sch.missedEvents.contains(evt.Schedule) {
+		// 	coldEvents <- evt
+		// }
 		sch.Inc(instrument.DeletedSchedule)
 	// should be at the last position
 	case schedule.Schedule:
@@ -118,10 +115,11 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 			sch.addToTimers(evt)
 			sch.Inc(instrument.PlannedSchedule)
 		}
-		if sch.missedEvents.contains(evt) {
-			coldEvents <- evt
-		}
+		// if sch.missedEvents.contains(evt) {
+		// 	coldEvents <- evt
+		// }
 	default:
+		fmt.Printf("@@@ inside default")
 		sch.events <- evt
 		sch.Inc(instrument.Other)
 	}
@@ -130,6 +128,10 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 func (sch Scheduler) processTimerEvent(s schedule.Schedule) {
 	sch.events <- s
 	sch.Inc(instrument.TriggeredSchedule)
+}
+
+func (sch Scheduler) IsAlive() bool {
+	return true
 }
 
 func (sch Scheduler) Start(since time.Time) {
@@ -169,10 +171,22 @@ func (sch Scheduler) Start(since time.Time) {
 			case e, open := <-storeEvents:
 				if !open {
 					sch.Close()
-					// xxx storeEvents = nil
 					break
 				}
-				sch.processStoreEvent(since, e, coldEvents)
+
+				// cold events
+				if time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond {
+					coldEvents <- e
+					break
+				}
+
+				sch.processStoreEvent(since, e)
+
+				// to missed events for possible processing of the event
+				if sch.missedEvents.length() > 0 {
+					coldEvents <- e
+				}
+
 			}
 		}
 	}()
