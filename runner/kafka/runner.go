@@ -9,10 +9,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/etf1/kafka-message-scheduler/apiserver/rest"
 	"github.com/etf1/kafka-message-scheduler/config"
 	"github.com/etf1/kafka-message-scheduler/instrument"
 	"github.com/etf1/kafka-message-scheduler/instrument/prometheus"
-	"github.com/etf1/kafka-message-scheduler/runner"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
 	"github.com/etf1/kafka-message-scheduler/store/kafka"
 )
@@ -68,7 +68,7 @@ func DefaultRunnerParams() (Config, time.Time, instrument.Collector) {
 	return DefaultConfig(), DefaultSince(), DefaultCollector()
 }
 
-func DefaultRunner() runner.Runner {
+func DefaultRunner() *Runner {
 	return NewRunner(DefaultRunnerParams())
 }
 
@@ -119,10 +119,13 @@ func (r *Runner) Start() error {
 	}
 	defer store.Close()
 
-	s := scheduler.New(store, r.collector)
-	s.Start(r.since)
+	sch := scheduler.New(store, r.collector)
+	sch.Start(r.since)
 
-	events := s.Events()
+	srv := rest.New(&sch)
+	srv.Start(config.APIServerAddr())
+
+	events := sch.Events()
 
 loop:
 	for {
@@ -133,7 +136,11 @@ loop:
 			}
 			handler.Handle(event)
 		case <-r.stopChan:
-			s.Close()
+			err := srv.Stop()
+			if err != nil {
+				log.Errorf("error when stopping api server: %v", err)
+			}
+			sch.Close()
 		}
 	}
 

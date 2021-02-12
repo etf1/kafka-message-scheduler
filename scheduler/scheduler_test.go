@@ -790,21 +790,24 @@ loop:
 				epoch,
 			})
 		case isalive = <-aliveChan:
-		case <-time.After(5 * time.Second):
-			t.Logf("time out")
+		case <-time.After(7 * time.Second):
+			t.Logf("timeout")
 			break loop
 		}
 	}
 
-	// calling isalive should be silent for the user of the scheduler
+	// isalive probes should not be visible in the scheduler triggered events output channel
 	if len(result) != 0 {
 		t.Fatalf("unexpected event in the triggered channel")
 	}
 
-	// check also metric == 0
+	// metrics should not be added for isalive probes
+	if l := len(coll.GetAll()); l != 0 {
+		t.Fatalf("metrics should be 0, got %v", l)
+	}
 
 	if !isalive {
-		t.Fatalf("scheduler is not alive")
+		t.Fatalf("scheduler is not alive :(")
 	}
 }
 

@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -30,12 +29,14 @@ type Scheduler struct {
 	store.Store
 	events       chan Event
 	missedEvents *missedEvents
+	livenessChan chan schedule.Schedule
 }
 
 func New(s store.Store, collector instrument.Collector) Scheduler {
 	ts := timers.New()
 	missedEvents := newMissedEvents()
 	events := make(chan Event, eventsChanBuffer)
+	livenessChan := make(chan schedule.Schedule, 1)
 
 	return Scheduler{
 		collector,
@@ -43,6 +44,7 @@ func New(s store.Store, collector instrument.Collector) Scheduler {
 		s,
 		events,
 		missedEvents,
+		livenessChan,
 	}
 }
 
@@ -88,22 +90,28 @@ func (sch Scheduler) processMissedEvent(e Event) {
 	}
 }
 
-// processStoreEvent process events coming from the store
-func (sch Scheduler) processStoreEvent(since time.Time, e store.Event) {
+// processMissedEvent process store events
+func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvents chan store.Event) {
+	// if the event is old, send to the missed events for processing
+	if time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond {
+		coldEvents <- e
+		return
+	}
+
 	switch evt := e.(type) {
 	case schedule.InvalidSchedule:
 		sch.events <- evt
 		sch.Inc(instrument.InvalidSchedule)
 	case schedule.DeleteSchedules:
 		sch.Timers.DeleteByFunc(evt.DeleteFunc)
-		// if sch.missedEvents.length() > 0 {
-		// 	coldEvents <- evt
-		// }
+		if sch.missedEvents.length() > 0 {
+			coldEvents <- evt
+		}
 	case schedule.DeletedSchedule:
 		sch.Timers.Delete(evt)
-		// if sch.missedEvents.contains(evt.Schedule) {
-		// 	coldEvents <- evt
-		// }
+		if sch.missedEvents.contains(evt.Schedule) {
+			coldEvents <- evt
+		}
 		sch.Inc(instrument.DeletedSchedule)
 	// should be at the last position
 	case schedule.Schedule:
@@ -113,25 +121,56 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event) {
 		} else if inRange {
 			log.Debugf("from store events: %+v", evt)
 			sch.addToTimers(evt)
+			// don't track isalive events
+			if isIsAliveSchedule(evt) {
+				break
+			}
 			sch.Inc(instrument.PlannedSchedule)
 		}
-		// if sch.missedEvents.contains(evt) {
-		// 	coldEvents <- evt
-		// }
+		if sch.missedEvents.contains(evt) {
+			coldEvents <- evt
+		}
 	default:
-		fmt.Printf("@@@ inside default")
 		sch.events <- evt
 		sch.Inc(instrument.Other)
 	}
 }
 
 func (sch Scheduler) processTimerEvent(s schedule.Schedule) {
+	// if liveness detected inform the dedicated channel only
+	if isIsAliveSchedule(s) {
+		sch.livenessChan <- s
+		return
+	}
 	sch.events <- s
 	sch.Inc(instrument.TriggeredSchedule)
 }
 
 func (sch Scheduler) IsAlive() bool {
-	return true
+	storeEvents := sch.Store.Events()
+
+	epoch := 3 * time.Second
+	sendTimeout := 1 * time.Second
+	recvTimeout := 5 * time.Second
+
+	// send isAlive witness probe as a "store" event and wait for it
+	// in the liveness channel
+	select {
+	case storeEvents <- isAliveSchedule(epoch):
+	case <-time.After(sendTimeout):
+		// something wrong the channel is blocking
+		log.Errorf("cannot send isalive probe in store events channel")
+		return false
+	}
+
+	select {
+	case <-sch.livenessChan:
+		return true
+	case <-time.After(recvTimeout):
+		// something wrong islaive schedule was not triggered
+		log.Errorf("timeout for isalive probe from liveness channel")
+		return false
+	}
 }
 
 func (sch Scheduler) Start(since time.Time) {
@@ -173,20 +212,7 @@ func (sch Scheduler) Start(since time.Time) {
 					sch.Close()
 					break
 				}
-
-				// cold events
-				if time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond {
-					coldEvents <- e
-					break
-				}
-
-				sch.processStoreEvent(since, e)
-
-				// to missed events for possible processing of the event
-				if sch.missedEvents.length() > 0 {
-					coldEvents <- e
-				}
-
+				sch.processStoreEvent(since, e, coldEvents)
 			}
 		}
 	}()
