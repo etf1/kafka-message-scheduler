@@ -3,6 +3,7 @@ package scheduler
 import (
 	"time"
 
+	"github.com/etf1/kafka-message-scheduler/internal/schedule/simple"
 	"github.com/etf1/kafka-message-scheduler/schedule"
 )
 
@@ -35,4 +36,14 @@ func EndOfToday() int64 {
 func IsInRange(since time.Time, s schedule.Schedule) bool {
 	// typically, in range of the current day
 	return since.Unix() <= s.Epoch() && s.Epoch() <= EndOfToday()
+}
+
+const isAliveID string = "||is-alive||"
+
+func isAliveSchedule(d time.Duration) schedule.Schedule {
+	return simple.NewSchedule(isAliveID, time.Now().Add(d))
+}
+
+func isIsAliveSchedule(s schedule.Schedule) bool {
+	return s.ID() == isAliveID
 }

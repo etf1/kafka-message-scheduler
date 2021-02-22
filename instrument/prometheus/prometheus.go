@@ -33,6 +33,8 @@ func NewCollector(addr string) Collector {
 
 	go func() {
 		log.Printf("prometheus metrics available on %s/metrics", addr)
+		defer log.Printf("prometheus metrics server stopped")
+
 		if err := srv.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
 				log.Error(err)

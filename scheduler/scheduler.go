@@ -29,12 +29,14 @@ type Scheduler struct {
 	store.Store
 	events       chan Event
 	missedEvents *missedEvents
+	livenessChan chan schedule.Schedule
 }
 
 func New(s store.Store, collector instrument.Collector) Scheduler {
 	ts := timers.New()
 	missedEvents := newMissedEvents()
 	events := make(chan Event, eventsChanBuffer)
+	livenessChan := make(chan schedule.Schedule, 1)
 
 	return Scheduler{
 		collector,
@@ -42,6 +44,7 @@ func New(s store.Store, collector instrument.Collector) Scheduler {
 		s,
 		events,
 		missedEvents,
+		livenessChan,
 	}
 }
 
@@ -89,10 +92,12 @@ func (sch Scheduler) processMissedEvent(e Event) {
 
 // processMissedEvent process store events
 func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvents chan store.Event) {
+	// if the event is old, send to the missed events for processing
 	if time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond {
 		coldEvents <- e
 		return
 	}
+
 	switch evt := e.(type) {
 	case schedule.InvalidSchedule:
 		sch.events <- evt
@@ -116,6 +121,10 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 		} else if inRange {
 			log.Debugf("from store events: %+v", evt)
 			sch.addToTimers(evt)
+			// don't track isalive events
+			if isIsAliveSchedule(evt) {
+				break
+			}
 			sch.Inc(instrument.PlannedSchedule)
 		}
 		if sch.missedEvents.contains(evt) {
@@ -128,8 +137,40 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 }
 
 func (sch Scheduler) processTimerEvent(s schedule.Schedule) {
+	// if liveness detected inform the dedicated channel only
+	if isIsAliveSchedule(s) {
+		sch.livenessChan <- s
+		return
+	}
 	sch.events <- s
 	sch.Inc(instrument.TriggeredSchedule)
+}
+
+func (sch Scheduler) IsAlive() bool {
+	storeEvents := sch.Store.Events()
+
+	epoch := 3 * time.Second
+	sendTimeout := 1 * time.Second
+	recvTimeout := 5 * time.Second
+
+	// send isAlive witness probe as a "store" event and wait for it
+	// in the liveness channel
+	select {
+	case storeEvents <- isAliveSchedule(epoch):
+	case <-time.After(sendTimeout):
+		// something wrong the channel is blocking
+		log.Errorf("cannot send isalive probe in store events channel")
+		return false
+	}
+
+	select {
+	case <-sch.livenessChan:
+		return true
+	case <-time.After(recvTimeout):
+		// something wrong islaive schedule was not triggered
+		log.Errorf("timeout for isalive probe from liveness channel")
+		return false
+	}
 }
 
 func (sch Scheduler) Start(since time.Time) {
@@ -169,7 +210,6 @@ func (sch Scheduler) Start(since time.Time) {
 			case e, open := <-storeEvents:
 				if !open {
 					sch.Close()
-					// xxx storeEvents = nil
 					break
 				}
 				sch.processStoreEvent(since, e, coldEvents)

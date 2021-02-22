@@ -757,6 +757,60 @@ loop:
 	}
 }
 
+// Rule #11: scheduler should be able to diagnose its internal functioning
+func TestScheduler_isalive(t *testing.T) {
+	store := hmap.New()
+	coll := hmapcoll.New()
+
+	startOfToday := scheduler.StartOfToday()
+	s := scheduler.New(store, coll)
+	defer s.Close()
+
+	s.Start(startOfToday)
+
+	events := s.Events()
+
+	result := make([]ReceivedEvent, 0)
+
+	aliveChan := make(chan bool, 1)
+	go func() {
+		aliveChan <- s.IsAlive()
+	}()
+
+	isalive := false
+
+loop:
+	for {
+		select {
+		case evt := <-events:
+			epoch := time.Now().Unix()
+			t.Logf("received %T %v\n", evt, evt)
+			result = append(result, ReceivedEvent{
+				evt,
+				epoch,
+			})
+		case isalive = <-aliveChan:
+		case <-time.After(7 * time.Second):
+			t.Logf("timeout")
+			break loop
+		}
+	}
+
+	// isalive probes should not be visible in the scheduler triggered events output channel
+	if len(result) != 0 {
+		t.Fatalf("unexpected event in the triggered channel")
+	}
+
+	// metrics should not be added for isalive probes
+	if l := len(coll.GetAll()); l != 0 {
+		t.Fatalf("metrics should be 0, got %v", l)
+	}
+
+	if !isalive {
+		t.Fatalf("scheduler is not alive :(")
+	}
+}
+
 // Test issue #8 : https://github.com/etf1/kafka-message-scheduler/issues/8
 func TestScheduler_issue8(t *testing.T) {
 	store := hmap.New()
