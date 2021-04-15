@@ -13,7 +13,6 @@ import (
 
 func newServer() (srv rest.Server, closeFunc func()) {
 	sch := scheduler.New(hmap.New(), hmapcoll.New())
-
 	sch.Start(scheduler.StartOfToday())
 
 	srv = rest.New(&sch)
@@ -32,6 +31,6 @@ func executeRequest(router http.Handler, req *http.Request) *httptest.ResponseRe
 
 func checkResponseCode(t *testing.T, expected, actual int) {
 	if expected != actual {
-		t.Errorf("Expected response code %d. Got %d\n", expected, actual)
+		t.Fatalf("unexpected response code %d, expected: %d", actual, expected)
 	}
 }
