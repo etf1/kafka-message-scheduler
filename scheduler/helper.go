@@ -3,8 +3,8 @@ package scheduler
 import (
 	"time"
 
-	"github.com/etf1/kafka-message-scheduler/internal/schedule/simple"
 	"github.com/etf1/kafka-message-scheduler/schedule"
+	"github.com/etf1/kafka-message-scheduler/schedule/simple"
 )
 
 func StartOfToday() time.Time {

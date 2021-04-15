@@ -8,9 +8,9 @@ import (
 
 	"github.com/etf1/kafka-message-scheduler/instrument"
 	hmapcoll "github.com/etf1/kafka-message-scheduler/internal/collector/hmap"
-	"github.com/etf1/kafka-message-scheduler/internal/schedule/simple"
 	"github.com/etf1/kafka-message-scheduler/internal/store/hmap"
 	"github.com/etf1/kafka-message-scheduler/schedule"
+	"github.com/etf1/kafka-message-scheduler/schedule/simple"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
 )
 
