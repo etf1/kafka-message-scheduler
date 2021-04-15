@@ -197,6 +197,7 @@ func FullMessage(topic string, key, value interface{}, epoch int64, targetTopic 
 		Headers:        headers,
 		Value:          toBytes(value),
 		Key:            toBytes(key),
+		Timestamp:      time.Now(),
 	}
 }
 

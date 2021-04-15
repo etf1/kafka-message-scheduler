@@ -1,6 +1,7 @@
 package simple
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -51,6 +52,14 @@ func NewSchedule(id, epoch interface{}, timestamp ...time.Time) schedule.Schedul
 		epoch:     iepoch,
 		timestamp: ts,
 	}
+}
+
+func (s Schedule) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	m["id"] = s.ID()
+	m["epoch"] = s.Epoch()
+	m["timestamp"] = s.Timestamp()
+	return json.Marshal(m)
 }
 
 func (s Schedule) ID() string {
