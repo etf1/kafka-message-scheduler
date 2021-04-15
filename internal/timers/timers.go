@@ -148,7 +148,7 @@ func (ts Timers) Get(id string) schedule.Schedule {
 	defer ts.mutex.RUnlock()
 
 	if t, ok := ts.items[id]; ok {
-		return t
+		return t.Schedule
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func (ts Timers) GetAll() []schedule.Schedule {
 
 	result := make([]schedule.Schedule, 0)
 	for _, v := range ts.items {
-		result = append(result, v)
+		result = append(result, v.Schedule)
 	}
 	return result
 }

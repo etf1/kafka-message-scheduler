@@ -11,7 +11,7 @@ const (
 	eventsChanBuffer = 10000
 )
 
-// Hmap is an implementation for the store.Store interface
+// Hmap is an implementation of the store.Store interface
 type Hmap struct {
 	events chan store.Event
 }

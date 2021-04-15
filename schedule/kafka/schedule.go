@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -32,6 +33,10 @@ func (s Schedule) TargetTopic() string {
 	return s.getHeaderValue(TargetTopic)
 }
 
+func (s Schedule) Topic() string {
+	return *s.TopicPartition.Topic
+}
+
 func (s Schedule) TargetKey() string {
 	return s.getHeaderValue(TargetKey)
 }
@@ -44,14 +49,6 @@ func (s Schedule) IsDeleted() bool {
 	return s.Value == nil
 }
 
-/*
-func (s Schedule) IsOutdated() bool {
-	if s.Epoch() < time.Now().Unix() {
-		return true
-	}
-	return false
-}
-*/
 func (s Schedule) HasErrors() []error {
 	return schedule.CheckSchedule(s)
 }
@@ -70,6 +67,19 @@ func (s Schedule) Epoch() int64 {
 		return n
 	}
 	return 0
+}
+
+func (s Schedule) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	m["id"] = s.ID()
+	m["epoch"] = s.Epoch()
+	m["timestamp"] = s.Timestamp()
+	m["topic"] = s.Topic()
+	m["target-topic"] = s.TargetTopic()
+	m["target-key"] = s.TargetKey()
+	m["value"] = s.Value
+
+	return json.Marshal(m)
 }
 
 func (s Schedule) String() string {
