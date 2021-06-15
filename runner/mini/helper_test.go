@@ -1,4 +1,4 @@
-package mock_test
+package mini_test
 
 import (
 	"context"

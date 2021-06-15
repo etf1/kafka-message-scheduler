@@ -1,4 +1,4 @@
-package mock_test
+package mini_test
 
 import (
 	"bytes"
@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/etf1/kafka-message-scheduler/runner/mock"
+	"github.com/etf1/kafka-message-scheduler/runner/mini"
 )
 
-// Rule #1: mock runner must expose the api server endpoint /info
-func TestMockRunner_info(t *testing.T) {
-	runner := mock.NewRunner()
+// Rule #1: mini runner must expose the api server endpoint /info
+func TestMiniRunner_info(t *testing.T) {
+	runner := mini.NewRunner()
 
 	exitchan := make(chan bool)
 
@@ -80,9 +80,9 @@ loop:
 	}
 }
 
-// Rule #2: mock runner must expose the api server endpoint /schedules with mocked data
-func TestMockRunner_schedules(t *testing.T) {
-	runner := mock.NewRunner()
+// Rule #2: mini runner must expose the api server endpoint /schedules with minimalist data
+func TestMiniRunner_schedules(t *testing.T) {
+	runner := mini.NewRunner()
 
 	exitchan := make(chan bool)
 

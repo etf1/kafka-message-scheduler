@@ -43,9 +43,7 @@ func (s *Server) Start(addr string) {
 		s.Addr = addr
 
 		if err := s.ListenAndServe(); err != nil {
-			if err != http.ErrServerClosed {
-				log.Error(err)
-			}
+			log.Error(err)
 		}
 	}()
 }

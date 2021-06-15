@@ -44,8 +44,8 @@ func MetricsHTTPAddr() string {
 	return getString("METRICS_HTTP_ADDR", ":8001")
 }
 
-func APIServerAddr() string {
-	return getString("API_SERVER_ADDR", ":8080")
+func ServerAddr() string {
+	return getString("SERVER_ADDR", ":8000")
 }
 
 func BootstrapServers() string {

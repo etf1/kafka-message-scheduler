@@ -5,19 +5,19 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/etf1/kafka-message-scheduler/runner/mock"
+	"github.com/etf1/kafka-message-scheduler/runner/mini"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	version = "undefined"
+	version = "mini"
 )
 
 func main() {
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
-	kafkaRunner := mock.NewRunner()
+	kafkaRunner := mini.NewRunner()
 
 	exitchan := make(chan bool)
 

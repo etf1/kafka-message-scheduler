@@ -19,6 +19,13 @@ builds:
 bin:
 	go build ${LDFLAGS} -tags musl -v -o bin/kafka-scheduler ./cmd/kafka
 
+.PHONY: mock
+mini:
+	go build ${LDFLAGS} -tags musl -v -o bin/mini ./cmd/mini
+
+run.mini:
+	go run ${LDFLAGS} -tags musl -v ./cmd/mini
+
 run:
 	go run ${LDFLAGS} -tags musl -v ./cmd/kafka
 

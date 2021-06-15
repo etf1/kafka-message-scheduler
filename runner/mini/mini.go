@@ -1,4 +1,4 @@
-package mock
+package mini
 
 // Kafka runner for the scheduler
 
@@ -19,8 +19,8 @@ import (
 var (
 	Schedules = []kafka.Schedule{
 		{Message: test.FullMessage("scheduler", "schedule-1", "value 1", time.Now().Add(1*time.Hour).Unix(), "topic", "1")},
-		{Message: test.FullMessage("scheduler", "schedule-2", "value 2", time.Now().Add(1*time.Hour).Unix(), "topic", "2")},
-		{Message: test.FullMessage("scheduler", "schedule-3", "value 3", time.Now().Add(1*time.Hour).Unix(), "topic", "3")},
+		{Message: test.FullMessage("scheduler", "schedule-2", "value 2", time.Now().Add(2*time.Hour).Unix(), "topic", "2")},
+		{Message: test.FullMessage("scheduler", "schedule-3", "value 3", time.Now().Add(3*time.Hour).Unix(), "topic", "3")},
 	}
 )
 
@@ -52,7 +52,7 @@ func (r *Runner) Start() error {
 	sch.Start(scheduler.StartOfToday())
 
 	srv := rest.New(&sch)
-	srv.Start(config.APIServerAddr())
+	srv.Start(config.ServerAddr())
 
 	events := sch.Events()
 

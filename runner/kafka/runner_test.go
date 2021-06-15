@@ -11,7 +11,6 @@ import (
 	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
 	hmapcoll "github.com/etf1/kafka-message-scheduler/internal/collector/hmap"
 	"github.com/etf1/kafka-message-scheduler/internal/test"
-	"github.com/etf1/kafka-message-scheduler/runner"
 	"github.com/etf1/kafka-message-scheduler/runner/kafka"
 )
 
@@ -124,7 +123,7 @@ func TestResilience(t *testing.T) {
 	os.Setenv("SCHEDULES_TOPICS", schedulesTopic)
 	os.Setenv("HISTORY_TOPIC", historyTopic)
 
-	startKafkaRunner := func() runner.Runner {
+	startKafkaRunner := func() *kafka.Runner {
 		// kafka runner just like default runner
 		// except the prometheus collector because duplicate metrics collector registration is forbidden
 		kafkaRunner := kafka.NewRunner(kafka.DefaultConfig(), kafka.DefaultSince(), hmapcoll.New())

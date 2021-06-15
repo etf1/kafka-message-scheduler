@@ -123,7 +123,7 @@ func (r *Runner) Start() error {
 	sch.Start(r.since)
 
 	srv := rest.New(&sch)
-	srv.Start(config.APIServerAddr())
+	srv.Start(config.ServerAddr())
 
 	events := sch.Events()
 
