@@ -1,4 +1,4 @@
-package mock_test
+package mini_test
 
 import (
 	"context"
@@ -19,9 +19,9 @@ func getSchedules(timeout time.Duration) (resp *http.Response, err error) {
 }
 
 func get(path string, timeout time.Duration) (*http.Response, error) {
-	addr := os.Getenv("API_SERVER_ADDR")
+	addr := os.Getenv("SERVER_ADDR")
 	if addr == "" {
-		addr = config.APIServerAddr()
+		addr = config.ServerAddr()
 	}
 
 	if strings.HasPrefix(addr, ":") {
