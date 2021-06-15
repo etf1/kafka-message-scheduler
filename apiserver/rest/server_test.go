@@ -39,10 +39,10 @@ func TestServer_info(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	type info struct {
-		Host             string   `json:"hostname"`
-		Address          []string `json:"address"`
-		APIServerAddress string   `json:"api_server_address"`
-		Kafka            struct {
+		Host          string   `json:"hostname"`
+		Address       []string `json:"address"`
+		ServerAddress string   `json:"server_address"`
+		Kafka         struct {
 			BootstrapServers string   `json:"bootstrap_servers"`
 			Topics           []string `json:"topics"`
 			HistoryTopic     string   `json:"history_topic"`
@@ -57,7 +57,7 @@ func TestServer_info(t *testing.T) {
 
 	t.Logf("info: %s", response.Body.String())
 
-	if v := obj.APIServerAddress; v != config.APIServerAddr() {
+	if v := obj.ServerAddress; v != config.ServerAddr() {
 		t.Errorf("unexpected api server address: %v", v)
 	}
 	if v := obj.Host; v == "" {
@@ -69,7 +69,7 @@ func TestServer_info(t *testing.T) {
 	if v := obj.Kafka.BootstrapServers; v != config.BootstrapServers() {
 		t.Errorf("unexpected kafka bootstrap servers: %v", v)
 	}
-	if v := obj.Kafka.Topics; len(v) > 0 && v[0] != "scheduler" {
+	if v := obj.Kafka.Topics; len(v) > 0 && v[0] != "schedules" {
 		t.Errorf("unexpected kafka topics: %v", v)
 	}
 	if v := obj.Kafka.HistoryTopic; v != "history" {
@@ -79,7 +79,7 @@ func TestServer_info(t *testing.T) {
 
 // scheduler should have an endpoint for retrieving the list of schedules planned to be scheduled in memory
 
-// Rule #3: schedules endpoint should return 404 when no schedules found
+// Rule #3: schedules endpoint should return 200 when no schedules found
 func TestServer_schedules_notfound(t *testing.T) {
 	s, closeFunc := newServer()
 	defer closeFunc()
@@ -90,7 +90,7 @@ func TestServer_schedules_notfound(t *testing.T) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/schedules", nil)
 	response := executeRequest(s.Router(), req)
 
-	checkResponseCode(t, http.StatusNotFound, response.Code)
+	checkResponseCode(t, http.StatusOK, response.Code)
 }
 
 // Rule #4: schedules endpoint should return 200 with schedules as payload when schedules found

@@ -8,13 +8,13 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"os"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
 
 	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/etf1/kafka-message-scheduler/internal/helper"
 	"github.com/etf1/kafka-message-scheduler/schedule/kafka"
 	kafka_store "github.com/etf1/kafka-message-scheduler/store/kafka"
 )
@@ -27,15 +27,6 @@ const (
 	flushTimeoutMs = 10000
 )
 
-// tells if the tests is running in docker
-func isRunningInDocker() bool {
-	if _, err := os.Stat("/.dockerenv"); os.IsNotExist(err) {
-		return false
-	}
-
-	return true
-}
-
 func NewKafkaStore(t *testing.T, nbTopic int, nbPartitions []int) (store *kafka_store.Store, topics []string) {
 	topics = CreateTopics(t, nbTopic, nbPartitions, "scheduler")
 	return NewKafkaStoreFromTopics(t, topics), topics
@@ -43,7 +34,7 @@ func NewKafkaStore(t *testing.T, nbTopic int, nbPartitions []int) (store *kafka_
 
 func NewKafkaStoreFromTopics(t *testing.T, topics []string) *kafka_store.Store {
 	sessionTimeout := 6000
-	store, err := kafka_store.NewStore(GetBootstrapServers(), topics, "scheduler-cg", sessionTimeout)
+	store, err := kafka_store.NewStore(helper.GetDefaultBootstrapServers(), topics, "scheduler-cg", sessionTimeout)
 	if err != nil {
 		t.Fatalf("failed to create kafka store: %v\n", err)
 	}
@@ -56,7 +47,7 @@ func CreateTopics(t *testing.T, nbTopic int, nbPartitions []int, prefix string) 
 	topics := make([]string, nbTopic)
 
 	adm, err := confluent.NewAdminClient(&confluent.ConfigMap{
-		"bootstrap.servers": GetBootstrapServers(),
+		"bootstrap.servers": helper.GetDefaultBootstrapServers(),
 	})
 	if err != nil {
 		t.Fatalf("failed to create admin client: %v\n", err)
@@ -104,19 +95,9 @@ func RandomTopicName(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, genRandNum())
 }
 
-// Get the bootstrap servers because in or out the docker the kafka server is different
-func GetBootstrapServers() string {
-	if isRunningInDocker() {
-		fmt.Println("kafka bootstrap servers=kafka:29092")
-		return "kafka:29092"
-	}
-	fmt.Println("kafka bootstrap servers=localhost:9092")
-	return "localhost:9092"
-}
-
 func GetConsumerConfig(prefix string) *confluent.ConfigMap {
 	return &confluent.ConfigMap{
-		"bootstrap.servers":     GetBootstrapServers(),
+		"bootstrap.servers":     helper.GetDefaultBootstrapServers(),
 		"broker.address.family": "v4",
 		"group.id":              fmt.Sprintf("%s-%d", prefix, genRandNum()),
 		"session.timeout.ms":    6000,
@@ -126,7 +107,7 @@ func GetConsumerConfig(prefix string) *confluent.ConfigMap {
 
 func GetProducerConfig() *confluent.ConfigMap {
 	return &confluent.ConfigMap{
-		"bootstrap.servers": GetBootstrapServers(),
+		"bootstrap.servers": helper.GetDefaultBootstrapServers(),
 	}
 }
 

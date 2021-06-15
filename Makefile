@@ -2,10 +2,10 @@ VERSION ?= $(shell git describe --always --abbrev=1 --tags --match "v[0-9]*")
 LDFLAGS=-ldflags "-X main.version=${VERSION}"
 TMPDIR := $(shell mktemp -d)
 
-dev.up:
+up:
 	docker-compose -p dev up -d kafka
 
-dev.down:
+down:
 	docker-compose -p dev down -v
 
 build:
@@ -17,7 +17,14 @@ builds:
 
 .PHONY: bin
 bin:
-	go build ${LDFLAGS} -tags musl -v -o bin/kafka-scheduler ./cmd/kafka
+	go build ${LDFLAGS} -tags musl -v -o bin/scheduler ./cmd/kafka
+
+.PHONY: mock
+mini:
+	go build ${LDFLAGS} -tags musl -v -o bin/mini ./cmd/mini
+
+run.mini:
+	go run ${LDFLAGS} -tags musl -v ./cmd/mini
 
 run:
 	go run ${LDFLAGS} -tags musl -v ./cmd/kafka

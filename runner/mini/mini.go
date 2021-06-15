@@ -1,8 +1,10 @@
-package mock
+package mini
 
 // Kafka runner for the scheduler
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	hmapcoll "github.com/etf1/kafka-message-scheduler/internal/collector/hmap"
@@ -16,13 +18,20 @@ import (
 	"github.com/etf1/kafka-message-scheduler/scheduler"
 )
 
-var (
-	Schedules = []kafka.Schedule{
-		{Message: test.FullMessage("scheduler", "schedule-1", "value 1", time.Now().Add(1*time.Hour).Unix(), "topic", "1")},
-		{Message: test.FullMessage("scheduler", "schedule-2", "value 2", time.Now().Add(1*time.Hour).Unix(), "topic", "2")},
-		{Message: test.FullMessage("scheduler", "schedule-3", "value 3", time.Now().Add(1*time.Hour).Unix(), "topic", "3")},
-	}
+const (
+	ID1 = 1
+	ID2 = 2
+	ID3 = 3
 )
+
+func GetSchedule(id int) kafka.Schedule {
+	scheduleID := fmt.Sprintf("schedule-%d", id)
+	targetID := strconv.Itoa(id)
+	value := fmt.Sprintf("value %d", id)
+
+	epoch := time.Now().Add(time.Duration(id) * time.Minute).Unix()
+	return kafka.Schedule{Message: test.FullMessage("schedules", scheduleID, value, epoch, "topic", targetID)}
+}
 
 type Runner struct {
 	stopChan chan bool
@@ -42,17 +51,17 @@ func (r Runner) Close() error {
 func (r *Runner) Start() error {
 	store := hmap.New()
 
-	for _, m := range Schedules {
-		store.Add(m)
-	}
+	store.Add(GetSchedule(ID1))
+	store.Add(GetSchedule(ID2))
+	store.Add(GetSchedule(ID3))
 
-	handler := NewHandler()
+	handler := NewHandler(store)
 
 	sch := scheduler.New(store, hmapcoll.New())
 	sch.Start(scheduler.StartOfToday())
 
 	srv := rest.New(&sch)
-	srv.Start(config.APIServerAddr())
+	srv.Start(config.ServerAddr())
 
 	events := sch.Events()
 

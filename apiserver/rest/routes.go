@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/etf1/kafka-message-scheduler/config"
+	"github.com/etf1/kafka-message-scheduler/schedule"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -31,13 +32,16 @@ func (s *Server) schedules(w http.ResponseWriter, r *http.Request) {
 	list := s.Timers.GetAll()
 
 	if len(list) == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		err := respondWithJSON(w, http.StatusOK, []schedule.Schedule{})
+		if err != nil {
+			log.Errorf("cannot write json payload: %v", err)
+		}
 		return
 	}
 
 	err := respondWithJSON(w, http.StatusOK, list)
 	if err != nil {
-		log.Errorf("unable to respond with json: %v", err)
+		log.Errorf("cannot write json payload: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
@@ -80,16 +84,16 @@ func (s *Server) info(w http.ResponseWriter, r *http.Request) {
 		HistoryTopic     string   `json:"history_topic"`
 	}
 	type info struct {
-		Host             string   `json:"hostname"`
-		Address          []net.IP `json:"address"`
-		APIServerAddress string   `json:"api_server_address"`
-		kafka            `json:"kafka"`
+		Host          string   `json:"hostname"`
+		Address       []net.IP `json:"address"`
+		ServerAddress string   `json:"server_address"`
+		kafka         `json:"kafka"`
 	}
 
 	result := info{
-		Host:             host,
-		Address:          ips,
-		APIServerAddress: config.APIServerAddr(),
+		Host:          host,
+		Address:       ips,
+		ServerAddress: config.ServerAddr(),
 		kafka: kafka{
 			BootstrapServers: config.BootstrapServers(),
 			Topics:           config.SchedulesTopics(),
