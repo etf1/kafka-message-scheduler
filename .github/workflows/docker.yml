@@ -12,6 +12,22 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  build-go:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.15
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Test
+      run: make tests.docker
+
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
