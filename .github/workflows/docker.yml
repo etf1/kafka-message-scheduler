@@ -38,4 +38,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ github.repository }}:${{ steps.get_version.outputs.TAG_NAME }}
+          # tags: ${{ github.repository }}:${{ steps.get_version.outputs.TAG_NAME }}
+          tags: fkarakas/kafka-message-scheduler:${{ steps.get_version.outputs.TAG_NAME }}
+
