@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: docker-push
+name: docker
 on:
   push:
     tags: ['*']
@@ -38,6 +38,5 @@ jobs:
         with:
           context: .
           push: true
-          # tags: ${{ github.repository }}:${{ steps.get_version.outputs.TAG_NAME }}
           tags: fkarakas/kafka-message-scheduler:${{ steps.get_version.outputs.TAG_NAME }}
 
