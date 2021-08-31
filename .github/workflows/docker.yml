@@ -37,14 +37,16 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
-          context: ./cmd/kafka
+          context: .
+          file: ./cmd/kafka/Dockerfile
           push: true
           tags: ${{ github.repository }}:${{ steps.get_version.outputs.TAG_NAME }}
 
       - name: Build and push Docker image for mini version
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
-          context: ./cmd/mini
+          context: .
+          file: ./cmd/mini/Dockerfile
           push: true
           tags: ${{ github.repository }}:mini
 
