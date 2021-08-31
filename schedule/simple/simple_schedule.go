@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
-	"github.com/etf1/kafka-message-scheduler/schedule"
 )
 
 // Schedule is a simple implementation of the schedule.Schedule interface, used for tests
@@ -16,7 +14,7 @@ type Schedule struct {
 	timestamp int64
 }
 
-func NewSchedule(id, epoch interface{}, timestamp ...time.Time) schedule.Schedule {
+func NewSchedule(id, epoch interface{}, timestamp ...time.Time) Schedule {
 	var sid string
 
 	switch v := id.(type) {
@@ -60,6 +58,20 @@ func (s Schedule) MarshalJSON() ([]byte, error) {
 	m["epoch"] = s.Epoch()
 	m["timestamp"] = s.Timestamp()
 	return json.Marshal(m)
+}
+
+func (s *Schedule) UnmarshalJSON(b []byte) error {
+	var m map[string]interface{}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return err
+	}
+
+	s.id = m["id"].(string)
+	s.epoch = int64(m["epoch"].(float64))
+	s.timestamp = int64(m["timestamp"].(float64))
+
+	return nil
 }
 
 func (s Schedule) ID() string {

@@ -47,7 +47,7 @@ type Runner struct {
 }
 
 func DefaultCollector() prometheus.Collector {
-	return prometheus.NewCollector(config.MetricsHTTPAddr())
+	return prometheus.NewCollector(config.MetricsAddr())
 }
 
 func DefaultConfig() Config {
@@ -123,7 +123,7 @@ func (r *Runner) Start() error {
 	sch.Start(r.since)
 
 	srv := rest.New(&sch)
-	srv.Start(config.APIServerAddr())
+	srv.Start(config.ServerAddr())
 
 	events := sch.Events()
 

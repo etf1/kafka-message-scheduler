@@ -40,12 +40,12 @@ func GraylogServer() string {
 	return getString("GRAYLOG_SERVER", "")
 }
 
-func MetricsHTTPAddr() string {
-	return getString("METRICS_HTTP_ADDR", ":8001")
+func MetricsAddr() string {
+	return getString("METRICS_ADDR", ":8001")
 }
 
-func APIServerAddr() string {
-	return getString("API_SERVER_ADDR", ":8080")
+func ServerAddr() string {
+	return getString("SERVER_ADDR", ":8000")
 }
 
 func BootstrapServers() string {
@@ -65,7 +65,7 @@ func SinceDelta() int {
 }
 
 func SchedulesTopics() []string {
-	return strings.Split(getString("SCHEDULES_TOPICS", "scheduler"), ",")
+	return strings.Split(getString("SCHEDULES_TOPICS", "schedules"), ",")
 }
 
 func HistoryTopic() string {

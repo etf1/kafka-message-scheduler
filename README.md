@@ -128,3 +128,28 @@ If you plan to run multiple instances of the scheduler for example 3, you need a
 kafka-topics --bootstrap-server "${BOOTSTRAP_SERVERS}" --create --topic schedules \
              --partitions 3 --config "cleanup.policy=compact" --config "retention.ms=-1"
 ```
+
+# History topic
+
+Triggered schedules are stored in the history topic specified by the env. variable `HISTORY_TOPIC`.
+
+```
+kafka-topics --bootstrap-server "${BOOTSTRAP_SERVERS}" --create --topic history
+```
+
+# Scheduler mini
+
+For integration tests, you can start a "mini" version of the scheduler which doesn't need any dependencies (no need for kafka).
+This version is useful for integration tests with the scheduler rest api.
+
+* go run :
+
+```
+go run ./cmd/mini
+```
+
+* docker run :
+
+```
+docker run etf1/kafka-message-scheduler:mini
+```

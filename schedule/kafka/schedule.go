@@ -21,9 +21,9 @@ type Schedule struct {
 }
 
 func (s Schedule) getHeaderValue(key string) string {
-	for _, header := range s.Headers {
-		if header.Key == key && len(header.Value) > 0 {
-			return string(header.Value)
+	for i := 0; i < len(s.Headers); i++ {
+		if s.Headers[i].Key == key && len(s.Headers[i].Value) > 0 {
+			return string(s.Headers[i].Value)
 		}
 	}
 	return ""

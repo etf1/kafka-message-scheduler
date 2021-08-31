@@ -52,3 +52,7 @@ func (d DeleteSchedules) String() string {
 func (d DeleteSchedules) Timestamp() int64 {
 	return d.Time.Unix()
 }
+
+type Partialer interface {
+	Partial() Schedule
+}
