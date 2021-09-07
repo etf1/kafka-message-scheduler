@@ -153,3 +153,6 @@ go run ./cmd/mini
 ```
 docker run etf1/kafka-message-scheduler:mini
 ```
+# Admin GUI
+
+An admin GUI is available on another git repository for viewing schedulers info and schedules. For more information: https://github.com/etf1/kafka-message-scheduler-admin
