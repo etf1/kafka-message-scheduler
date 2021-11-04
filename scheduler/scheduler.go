@@ -100,27 +100,36 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 
 	switch evt := e.(type) {
 	case schedule.InvalidSchedule:
+		sch.Before(instrument.InvalidSchedule, evt)
 		sch.events <- evt
+		sch.After(instrument.InvalidSchedule, evt, nil)
 		sch.Inc(instrument.InvalidSchedule)
 	case schedule.DeleteSchedules:
 		sch.Timers.DeleteByFunc(evt.DeleteFunc)
 		if sch.missedEvents.length() > 0 {
 			coldEvents <- evt
 		}
+		sch.Inc(instrument.DeleteSchedules)
 	case schedule.DeletedSchedule:
+		sch.Before(instrument.DeletedSchedule, evt)
 		sch.Timers.Delete(evt)
 		if sch.missedEvents.contains(evt.Schedule) {
 			coldEvents <- evt
 		}
+		sch.After(instrument.DeletedSchedule, evt, nil)
 		sch.Inc(instrument.DeletedSchedule)
 	// should be at the last position
 	case schedule.Schedule:
 		inRange := IsInRange(since, evt)
 		if sch.Get(evt.ID()) != nil && !inRange {
+			sch.Before(instrument.DeletedSchedule, evt)
 			sch.Delete(evt)
+			sch.After(instrument.DeletedSchedule, evt, nil)
 		} else if inRange {
 			log.Debugf("from store events: %+v", evt)
+			sch.Before(instrument.PlannedSchedule, evt)
 			sch.addToTimers(evt)
+			sch.After(instrument.PlannedSchedule, evt, nil)
 			// don't track isalive events
 			if isIsAliveSchedule(evt) {
 				break

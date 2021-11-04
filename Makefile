@@ -1,5 +1,5 @@
 VERSION ?= $(shell git describe --always --abbrev=1 --tags --match "v[0-9]*")
-LDFLAGS=-ldflags "-X main.version=${VERSION}"
+LDFLAGS=-ldflags "-s -w -X main.Version=${VERSION}"
 TMPDIR := $(shell mktemp -d)
 
 up:

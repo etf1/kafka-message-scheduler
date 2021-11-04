@@ -706,6 +706,7 @@ func TestScheduler_collector(t *testing.T) {
 		simpleSchedule("2", -1),
 		simpleSchedule("3", now.Add(3*time.Second).Unix()),
 		simpleSchedule("4", now.Add(3*time.Second).Unix()),
+		simpleSchedule("5", now.Add(5*time.Second).Unix()),
 	}
 
 	for _, schedule := range live {
@@ -713,6 +714,7 @@ func TestScheduler_collector(t *testing.T) {
 	}
 
 	store.Delete(simpleSchedule("3", 0))
+	store.DeleteByFunc(simpleSchedule("5", 0))
 
 	events := s.Events()
 
@@ -734,26 +736,37 @@ loop:
 
 	printReceivedEvents(t, result)
 
-	t.Logf("metrics=%v", coll.GetAll())
+	t.Logf("metrics=%v", coll.GetMetrics())
 
-	if coll.Get(instrument.DeletedSchedule) != 1 {
+	if coll.GetMetric(instrument.DeletedSchedule) != 1 {
 		t.Fatalf("unexpected collected count for deleted")
 	}
 
-	if coll.Get(instrument.InvalidSchedule) != 1 {
+	if coll.GetMetric(instrument.DeleteSchedules) != 1 {
+		t.Fatalf("unexpected collected count for delete schedules")
+	}
+
+	if coll.GetMetric(instrument.InvalidSchedule) != 1 {
 		t.Fatalf("unexpected collected count for invalid")
 	}
 
-	if coll.Get(instrument.MissedSchedule) != 1 {
+	if coll.GetMetric(instrument.MissedSchedule) != 1 {
 		t.Fatalf("unexpected collected count for missed")
 	}
 
-	if coll.Get(instrument.PlannedSchedule) != 2 {
+	if coll.GetMetric(instrument.PlannedSchedule) != 3 {
 		t.Fatalf("unexpected collected count for planned")
 	}
 
-	if coll.Get(instrument.TriggeredSchedule) != 1 {
+	if coll.GetMetric(instrument.TriggeredSchedule) != 1 {
 		t.Fatalf("unexpected collected count for triggered")
+	}
+
+	before := coll.GetBefore(instrument.ProducedSchedule)
+	after := coll.GetAfter(instrument.ProducedSchedule)
+
+	if before != after {
+		t.Fatalf("unexpected collected before and after for triggered")
 	}
 }
 
@@ -802,7 +815,7 @@ loop:
 	}
 
 	// metrics should not be added for isalive probes
-	if l := len(coll.GetAll()); l != 0 {
+	if l := len(coll.GetMetrics()); l != 0 {
 		t.Fatalf("metrics should be 0, got %v", l)
 	}
 

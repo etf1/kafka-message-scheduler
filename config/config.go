@@ -71,3 +71,7 @@ func SchedulesTopics() []string {
 func HistoryTopic() string {
 	return getString("HISTORY_TOPIC", "history")
 }
+
+func OpenTelemetryCollectorEndpoint() string {
+	return getString("OTEL_COLLECTOR_ENDPOINT", "")
+}

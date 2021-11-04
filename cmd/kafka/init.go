@@ -23,7 +23,7 @@ func initLog() {
 	log.SetFormatter(formatter)
 
 	if graylogServer := config.GraylogServer(); graylogServer != "" {
-		hook := graylog.NewGraylogHook(graylogServer, map[string]interface{}{"app": app, "version": version, "facility": app})
+		hook := graylog.NewGraylogHook(graylogServer, map[string]interface{}{"app": App, "version": Version, "facility": App})
 		defer hook.Flush()
 
 		log.AddHook(hook)

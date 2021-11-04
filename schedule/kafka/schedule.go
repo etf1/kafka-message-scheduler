@@ -69,6 +69,10 @@ func (s Schedule) Epoch() int64 {
 	return 0
 }
 
+func (s Schedule) Unwrap() interface{} {
+	return s.Message
+}
+
 func (s Schedule) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m["id"] = s.ID()

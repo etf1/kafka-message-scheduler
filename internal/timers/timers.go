@@ -133,13 +133,7 @@ func (ts Timers) DeleteAll() {
 	defer ts.mutex.Unlock()
 
 	for _, t := range ts.items {
-		if !t.Stop() {
-			select {
-			case <-t.C:
-			default:
-			}
-		}
-		delete(ts.items, t.ID())
+		ts.deleteItem(t.ID())
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/etf1/kafka-message-scheduler/instrument"
+	"github.com/etf1/kafka-message-scheduler/schedule"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -70,6 +71,14 @@ func (c Collector) Close() error {
 	}
 
 	return nil
+}
+
+func (c Collector) Before(event instrument.EventType, message schedule.Schedule) {
+	// Nothing to do here.
+}
+
+func (c Collector) After(event instrument.EventType, message schedule.Schedule, err error) {
+	// Nothing to do here.
 }
 
 func (c Collector) Inc(e instrument.EventType) {

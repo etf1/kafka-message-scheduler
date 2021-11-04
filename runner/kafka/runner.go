@@ -8,10 +8,12 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/etf1/kafka-message-scheduler/apiserver/rest"
 	"github.com/etf1/kafka-message-scheduler/config"
 	"github.com/etf1/kafka-message-scheduler/instrument"
+	"github.com/etf1/kafka-message-scheduler/instrument/otel"
 	"github.com/etf1/kafka-message-scheduler/instrument/prometheus"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
 	"github.com/etf1/kafka-message-scheduler/store/kafka"
@@ -46,8 +48,14 @@ type Runner struct {
 	collector instrument.Collector
 }
 
-func DefaultCollector() prometheus.Collector {
+func PrometheusCollector() prometheus.Collector {
 	return prometheus.NewCollector(config.MetricsAddr())
+}
+
+func OtelCollector(tracerProvider trace.TracerProvider) *otel.Collector {
+	return otel.NewCollector(
+		otel.WithTracerProvider(tracerProvider),
+	)
 }
 
 func DefaultConfig() Config {
@@ -65,7 +73,7 @@ func DefaultSince() time.Time {
 }
 
 func DefaultRunnerParams() (Config, time.Time, instrument.Collector) {
-	return DefaultConfig(), DefaultSince(), DefaultCollector()
+	return DefaultConfig(), DefaultSince(), PrometheusCollector()
 }
 
 func DefaultRunner() *Runner {
@@ -104,7 +112,7 @@ func (r *Runner) Start() error {
 		defer c.Close()
 	}
 
-	handler, err := NewHandler(r.config.BootstrapServers, r.config.HistoryTopic)
+	handler, err := NewHandler(r.config.BootstrapServers, r.config.HistoryTopic, r.collector)
 	if err != nil {
 		return err
 	}

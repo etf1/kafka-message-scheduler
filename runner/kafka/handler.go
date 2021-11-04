@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/etf1/kafka-message-scheduler/instrument"
 	"github.com/etf1/kafka-message-scheduler/schedule"
 	"github.com/etf1/kafka-message-scheduler/schedule/kafka"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
@@ -28,11 +29,12 @@ const (
 )
 
 type EventHandler struct {
+	collector    instrument.Collector
 	historyTopic string
 	producer     *confluent.Producer
 }
 
-func NewHandler(bootstrapServers, historyTopic string) (EventHandler, error) {
+func NewHandler(bootstrapServers, historyTopic string, collector instrument.Collector) (EventHandler, error) {
 	if bootstrapServers == "" {
 		return EventHandler{}, fmt.Errorf("bootstrapServers input cannot be empty")
 	}
@@ -50,6 +52,7 @@ func NewHandler(bootstrapServers, historyTopic string) (EventHandler, error) {
 
 	k := EventHandler{
 		historyTopic: historyTopic,
+		collector:    collector,
 		producer:     producer,
 	}
 
@@ -221,7 +224,9 @@ func (k EventHandler) Handle(event scheduler.Event) {
 			log.Errorf("event is not a kafka.Schedule: %T %+v", event, event)
 			break
 		}
+		k.collector.Before(instrument.ProducedSchedule, msg)
 		err := k.produceTargetMessage(msg)
+		k.collector.After(instrument.ProducedSchedule, msg, err)
 		if err != nil {
 			log.Errorf("unable to produce the message: %v %v", err, msg)
 		}
@@ -232,7 +237,9 @@ func (k EventHandler) Handle(event scheduler.Event) {
 			log.Errorf("event is not a kafka.Schedule: %T %+v", event, event)
 			break
 		}
+		k.collector.Before(instrument.ProducedSchedule, msg)
 		err := k.produceTargetMessage(msg)
+		k.collector.After(instrument.ProducedSchedule, msg, err)
 		if err != nil {
 			log.Errorf("unable to produce the message: %v %v", err, msg)
 		}

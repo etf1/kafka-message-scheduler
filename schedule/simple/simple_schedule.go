@@ -89,3 +89,7 @@ func (s Schedule) Timestamp() int64 {
 func (s Schedule) String() string {
 	return fmt.Sprintf("{id:%s epoch:%v date:%v timestamp:%v}", s.ID(), s.Epoch(), time.Unix(s.Epoch(), 0), s.Timestamp())
 }
+
+func (s Schedule) Unwrap() interface{} {
+	return s
+}
