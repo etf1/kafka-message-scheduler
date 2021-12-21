@@ -3,6 +3,7 @@ package kafka
 // Kafka runner for the scheduler
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -48,7 +49,27 @@ type Runner struct {
 	collector instrument.Collector
 }
 
-func PrometheusCollector() prometheus.Collector {
+func Collector(app, version string) (coll instrument.Collector, cancel func() error) {
+	if config.OpenTelemetryCollectorEndpoint() != "" {
+		tracerProvider := otel.GetTracerProvider(context.Background(), config.OpenTelemetryCollectorEndpoint(), app, version)
+		cancel = func() error {
+			return tracerProvider.Shutdown(context.Background())
+		}
+		coll = instrument.NewMultiCollector(
+			DefaultCollector(),
+			OtelCollector(tracerProvider),
+		)
+	} else {
+		coll = DefaultCollector()
+		cancel = func() error {
+			return nil
+		}
+	}
+
+	return
+}
+
+func DefaultCollector() prometheus.Collector {
 	return prometheus.NewCollector(config.MetricsAddr())
 }
 
@@ -73,7 +94,7 @@ func DefaultSince() time.Time {
 }
 
 func DefaultRunnerParams() (Config, time.Time, instrument.Collector) {
-	return DefaultConfig(), DefaultSince(), PrometheusCollector()
+	return DefaultConfig(), DefaultSince(), DefaultCollector()
 }
 
 func DefaultRunner() *Runner {

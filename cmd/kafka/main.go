@@ -1,16 +1,12 @@
 package main
 
 import (
-	"context"
 	"os"
 	"os/signal"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/etf1/kafka-message-scheduler/config"
-	"github.com/etf1/kafka-message-scheduler/instrument"
-	"github.com/etf1/kafka-message-scheduler/instrument/otel"
 	runner "github.com/etf1/kafka-message-scheduler/runner/kafka"
 )
 
@@ -27,17 +23,12 @@ func main() {
 
 	initLog()
 
-	ctx := context.Background()
-
-	tracerProvider := otel.GetTracerProvider(ctx, config.OpenTelemetryCollectorEndpoint(), App, Version)
+	coll, cancel := runner.Collector(App, Version)
 
 	kafkaRunner := runner.NewRunner(
 		runner.DefaultConfig(),
 		runner.DefaultSince(),
-		instrument.NewMultiCollector(
-			runner.PrometheusCollector(),
-			runner.OtelCollector(tracerProvider),
-		),
+		coll,
 	)
 
 	exitchan := make(chan bool)
@@ -55,7 +46,7 @@ loop:
 		select {
 		case <-sigchan:
 			kafkaRunner.Close()
-			_ = tracerProvider.Shutdown(ctx)
+			cancel()
 		case <-exitchan:
 			log.Printf("scheduler exited")
 			break loop

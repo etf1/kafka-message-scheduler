@@ -17,6 +17,24 @@ func NewMultiCollector(collectors ...Collector) MultiCollector {
 	}
 }
 
+/*
+type Closeable interface {
+	Close() error
+}
+
+func (m MultiCollector) Close() error {
+	for i := 0; i < len(m.collectors); i++ {
+		if cl, ok := m.collectors[i].(Closeable); ok {
+			err := cl.Close()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+*/
+
 // Before calls all Before method of inner collectors
 func (m MultiCollector) Before(event EventType, sch schedule.Schedule) {
 	for i := 0; i < len(m.collectors); i++ {
