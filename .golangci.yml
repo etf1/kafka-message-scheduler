@@ -77,7 +77,6 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - revive
     - gomnd
     - goprintffuncname
     - gosimple
