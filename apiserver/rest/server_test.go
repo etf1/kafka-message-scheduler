@@ -19,7 +19,7 @@ func TestServer_isalive(t *testing.T) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/liveness", nil)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/liveness", http.NoBody)
 	response := executeRequest(s.Router(), req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -33,7 +33,7 @@ func TestServer_info(t *testing.T) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/info", nil)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/info", http.NoBody)
 	response := executeRequest(s.Router(), req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -87,7 +87,7 @@ func TestServer_schedules_notfound(t *testing.T) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/schedules", nil)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/schedules", http.NoBody)
 	response := executeRequest(s.Router(), req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -105,7 +105,7 @@ func TestServer_schedules_found(t *testing.T) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/schedules", nil)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/schedules", http.NoBody)
 	response := executeRequest(s.Router(), req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)

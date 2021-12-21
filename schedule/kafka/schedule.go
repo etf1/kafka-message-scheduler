@@ -58,9 +58,12 @@ func (s Schedule) Timestamp() int64 {
 }
 
 func (s Schedule) Epoch() int64 {
+	base := 10
+	bitSize := 64
+
 	epoch := s.getHeaderValue(Epoch)
 	if epoch != "" {
-		n, err := strconv.ParseInt(epoch, 10, 64)
+		n, err := strconv.ParseInt(epoch, base, bitSize)
 		if err != nil {
 			return 0
 		}

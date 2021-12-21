@@ -16,12 +16,13 @@ type Schedule struct {
 
 func NewSchedule(id, epoch interface{}, timestamp ...time.Time) Schedule {
 	var sid string
+	base := 10
 
 	switch v := id.(type) {
 	case int:
 		sid = strconv.Itoa(v)
 	case int64:
-		sid = strconv.FormatInt(v, 10)
+		sid = strconv.FormatInt(v, base)
 	case string:
 		sid = v
 	default:

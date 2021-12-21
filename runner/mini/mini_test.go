@@ -3,7 +3,7 @@ package mini_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -51,7 +51,7 @@ func TestMiniRunner_info(t *testing.T) {
 		kafka         `json:"kafka"`
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestMiniRunner_schedules(t *testing.T) {
 		Value       []byte `json:"value"`
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

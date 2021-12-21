@@ -57,7 +57,8 @@ func GroupID() string {
 }
 
 func SessionTimeout() int {
-	return getInt("SESSION_TIMEOUT", 6000)
+	defaultTimeout := 6000
+	return getInt("SESSION_TIMEOUT", defaultTimeout)
 }
 
 func SinceDelta() int {

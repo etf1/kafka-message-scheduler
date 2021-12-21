@@ -132,10 +132,11 @@ func toBytes(value interface{}) []byte {
 
 // Creates a kafka.Message
 func Message(topic string, key, value interface{}, epoch int64) *confluent.Message {
+	base := 10
 	headers := []confluent.Header{
 		{
 			Key:   kafka.Epoch,
-			Value: []byte(strconv.FormatInt(epoch, 10)),
+			Value: []byte(strconv.FormatInt(epoch, base)),
 		}}
 
 	return &confluent.Message{
@@ -159,10 +160,11 @@ func Messages(topic string, epochs []int64) []*confluent.Message {
 
 // FullMessage creates a kafka message with more details with scheduler headers
 func FullMessage(topic string, key, value interface{}, epoch int64, targetTopic string, targetKey interface{}) *confluent.Message {
+	base := 10
 	headers := []confluent.Header{
 		{
 			Key:   kafka.Epoch,
-			Value: []byte(strconv.FormatInt(epoch, 10)),
+			Value: []byte(strconv.FormatInt(epoch, base)),
 		},
 		{
 			Key:   kafka.TargetTopic,

@@ -46,7 +46,10 @@ loop:
 		select {
 		case <-sigchan:
 			kafkaRunner.Close()
-			cancel()
+			err := cancel()
+			if err != nil {
+				log.Errorf("cannot close collector: %v", err)
+			}
 		case <-exitchan:
 			log.Printf("scheduler exited")
 			break loop
