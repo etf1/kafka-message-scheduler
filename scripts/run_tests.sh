@@ -5,7 +5,7 @@ set -euo pipefail
 function wait_for_kafka(){
     local server="$1"
 
-    for i in {1..10}
+    for i in {1..30}
     do
         echo "Waiting for kafka cluster to be ready ..."
         # kafkacat has 5s timeout
