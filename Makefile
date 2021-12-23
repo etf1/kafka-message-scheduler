@@ -48,3 +48,9 @@ tests.docker:
 	docker-compose -p tests up tests | tee ${TMPDIR}/tests.result
 	docker-compose -p tests down
 	bash ./scripts/check_gotest.sh ${TMPDIR}/tests.result
+
+docker:
+	docker build -t etf1/kafka-message-scheduler:${VERSION} -f ./cmd/kafka/Dockerfile .
+
+docker.mini:
+	docker build -t etf1/kafka-message-scheduler:mini-${VERSION} -f ./cmd/mini/Dockerfile .
