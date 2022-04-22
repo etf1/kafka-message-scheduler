@@ -18,6 +18,7 @@ import (
 )
 
 type Config struct {
+	FilePath         string
 	BootstrapServers string
 	HistoryTopic     string
 	GroupID          string
@@ -52,6 +53,7 @@ func DefaultCollector() prometheus.Collector {
 
 func DefaultConfig() Config {
 	return Config{
+		FilePath:         config.ConfigurationFile(),
 		BootstrapServers: config.BootstrapServers(),
 		GroupID:          config.GroupID(),
 		SchedulesTopics:  config.SchedulesTopics(),
@@ -92,6 +94,14 @@ type closer interface {
 }
 
 func (r *Runner) Start() error {
+	var configFile config.File
+	var err error
+	if r.config.FilePath != "" {
+		configFile, err = config.ReadFile(r.config.FilePath)
+		if err != nil {
+			return err
+		}
+	}
 	if r.config.BootstrapServers == "" {
 		return fmt.Errorf("kafka bootstrap servers unset, check variable environment ${BOOTSTRAP_SERVERS}")
 	}
@@ -104,7 +114,7 @@ func (r *Runner) Start() error {
 		defer c.Close()
 	}
 
-	handler, err := NewHandler(r.config.BootstrapServers, r.config.HistoryTopic)
+	handler, err := NewHandler(configFile.GenerateProducerConfiguration(), r.config.BootstrapServers, r.config.HistoryTopic)
 	if err != nil {
 		return err
 	}
@@ -113,7 +123,7 @@ func (r *Runner) Start() error {
 	log.Printf("config: %v", r.config)
 	log.Printf("handler: %v", handler)
 
-	store, err := kafka.NewStore(r.config.BootstrapServers, r.config.SchedulesTopics, r.config.GroupID, r.config.SessionTimeout)
+	store, err := kafka.NewStore(configFile.GenerateConsumerConfiguration(), r.config.BootstrapServers, r.config.SchedulesTopics, r.config.GroupID, r.config.SessionTimeout)
 	if err != nil {
 		return err
 	}
