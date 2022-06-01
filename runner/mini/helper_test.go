@@ -32,7 +32,7 @@ func get(path string, timeout time.Duration) (*http.Response, error) {
 	defer cancelFunc()
 
 	url := "http://" + addr + path
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
