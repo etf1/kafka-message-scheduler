@@ -178,8 +178,14 @@ type HandlerOpaque struct {
 }
 
 func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
-	headers := append(
-		msg.Headers,
+	headers := []confluent.Header{}
+
+	if len(msg.Headers) != 0 {
+		headers = append(headers, msg.Headers...)
+	}
+
+	headers = append(
+		headers,
 		confluent.Header{
 			Key:   OriginalTimestamp,
 			Value: []byte(strconv.FormatInt(msg.Timestamp(), 10)),

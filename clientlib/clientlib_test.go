@@ -1,6 +1,7 @@
 package clientlib
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"testing"
@@ -17,7 +18,7 @@ const (
 	scheduleID     = "scheduler-id"
 )
 
-func bytes(i string) []byte {
+func asBytes(i string) []byte {
 	return []byte(i)
 }
 
@@ -34,16 +35,16 @@ func message() *kafka.Message {
 	targetTopic := "target-topic"
 
 	msg := kafka.Message{
-		Key: bytes(key),
+		Key: asBytes(key),
 		Headers: []kafka.Header{
 			{
 				Key:   headerKey,
-				Value: bytes(headerValue),
+				Value: asBytes(headerValue),
 			},
 		},
 		Timestamp:     time.Now(),
 		TimestampType: kafka.TimestampCreateTime,
-		Value:         bytes(msgValue),
+		Value:         asBytes(msgValue),
 		TopicPartition: kafka.TopicPartition{
 			Topic: &targetTopic,
 		},
@@ -67,7 +68,7 @@ func TestScheduleMessage(t *testing.T) {
 		t.Fatalf("unexpected message key: %v", string(result.Key))
 	}
 
-	if string(result.Value) != string(msg.Value) {
+	if !bytes.Equal(result.Value, msg.Value) {
 		t.Fatalf("unexpected message value: %v", string(result.Value))
 	}
 
@@ -103,11 +104,11 @@ func TestScheduleMessage_reschedule_check_headers(t *testing.T) {
 	headers := result.Headers
 	headers = append(headers, kafka.Header{
 		Key:   "scheduler-key",
-		Value: bytes(key),
+		Value: asBytes(key),
 	})
 
 	msg = &kafka.Message{
-		Key:           bytes(key),
+		Key:           asBytes(key),
 		Headers:       headers,
 		Timestamp:     now,
 		TimestampType: kafka.TimestampCreateTime,
@@ -195,7 +196,7 @@ func TestScheduleRetry(t *testing.T) {
 		t.Fatalf("unexpected message key: %v", string(result.Key))
 	}
 
-	if string(result.Value) != string(msg.Value) {
+	if !bytes.Equal(result.Value, msg.Value) {
 		t.Fatalf("unexpected message value: %v", string(result.Value))
 	}
 
@@ -239,7 +240,7 @@ func TestScheduleRetry_not_first_attempt(t *testing.T) {
 		t.Fatalf("unexpected message key: %v", string(result.Key))
 	}
 
-	if string(result.Value) != string(msg.Value) {
+	if !bytes.Equal(result.Value, msg.Value) {
 		t.Fatalf("unexpected message value: %v", string(result.Value))
 	}
 
@@ -336,7 +337,7 @@ func TestIsSchedulerMessage(t *testing.T) {
 
 	msg.Headers = append(msg.Headers, kafka.Header{
 		Key:   "scheduler-key",
-		Value: bytes("video-offline"),
+		Value: asBytes("video-offline"),
 	},
 	)
 
