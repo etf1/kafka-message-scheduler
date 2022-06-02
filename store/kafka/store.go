@@ -39,17 +39,21 @@ type Store struct {
 	assigned      kafka.AssignedPartitions
 }
 
-func NewStore(bootstrapServers string, topics []string, groupID string, sessionTimeout int) (*Store, error) {
-	// TODO: load config from a yaml file (key and value defined in the yaml and not hard coded as now)
-	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":               bootstrapServers,
-		"broker.address.family":           "v4",
-		"group.id":                        groupID,
-		"session.timeout.ms":              sessionTimeout,
-		"enable.auto.commit":              false,
-		"go.events.channel.enable":        false,
-		"go.application.rebalance.enable": true,
-	})
+func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topics []string, groupID string, sessionTimeout int) (*Store, error) {
+	finalCfg := make(kafka.ConfigMap, len(kafkaConfiguration))
+	finalCfg["broker.address.family"] = "v4" // allow the user to override this in the configuration file
+	for k, v := range kafkaConfiguration {
+		finalCfg[k] = v
+	}
+	// these configuration options override the configuration file:
+	finalCfg["bootstrap.servers"] = bootstrapServers
+	finalCfg["group.id"] = groupID
+	finalCfg["session.timeout.ms"] = sessionTimeout
+	finalCfg["enable.auto.commit"] = false
+	finalCfg["go.events.channel.enable"] = false
+	finalCfg["go.application.rebalance.enable"] = true
+
+	consumer, err := kafka.NewConsumer(&finalCfg)
 
 	if err != nil {
 		return nil, fmt.Errorf("cannot create kafka consumer for the store: %w", err)

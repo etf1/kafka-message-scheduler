@@ -1,12 +1,62 @@
 package config
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 
+	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
+
+type File struct {
+	// NOTE:  Configuration for producer and consumer are kept separate so that librdkafka does not
+	// log warnings due to unrecognized options for a producer or consumer.  However, some settings
+	// might be common to both the consumer and the producer, and those are stored in the common
+	// configuration.
+
+	KafkaCommonConfiguration   confluent.ConfigMap `yaml:"kafka.common.configuration,omitempty"`
+	KafkaProducerConfiguration confluent.ConfigMap `yaml:"kafka.producer.configuration,omitempty"`
+	KafkaConsumerConfiguration confluent.ConfigMap `yaml:"kafka.consumer.configuration,omitempty"`
+}
+
+func (f *File) GenerateProducerConfiguration() confluent.ConfigMap {
+	result := make(confluent.ConfigMap, len(f.KafkaCommonConfiguration)+len(f.KafkaProducerConfiguration))
+	for k, v := range f.KafkaCommonConfiguration {
+		result[k] = v
+	}
+	for k, v := range f.KafkaProducerConfiguration {
+		result[k] = v
+	}
+	return result
+}
+
+func (f *File) GenerateConsumerConfiguration() confluent.ConfigMap {
+	result := make(confluent.ConfigMap, len(f.KafkaCommonConfiguration)+len(f.KafkaConsumerConfiguration))
+	for k, v := range f.KafkaCommonConfiguration {
+		result[k] = v
+	}
+	for k, v := range f.KafkaConsumerConfiguration {
+		result[k] = v
+	}
+	return result
+}
+
+func ReadFile(filePath string) (File, error) {
+	body, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return File{}, fmt.Errorf("reading configuration file: %w", err)
+	}
+	var result File
+	err = yaml.UnmarshalStrict(body, &result)
+	if err != nil {
+		return File{}, fmt.Errorf("parsing configuration file: %w", err)
+	}
+	return result, nil
+}
 
 func getString(name, defaultValue string) string {
 	value, set := os.LookupEnv(name)
@@ -34,6 +84,10 @@ func LogLevel() log.Level {
 		return log.InfoLevel
 	}
 	return lvl
+}
+
+func ConfigurationFile() string {
+	return getString("CONFIGURATION_FILE", "")
 }
 
 func GraylogServer() string {

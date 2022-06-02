@@ -76,14 +76,51 @@ The scheduler is exposing metrics on a specific port (8001 by default) at the UR
 
 The scheduler can be configured with environment variables:
 
-| Env. Variable     | Default        | Description                                                                                  |
-|-------------------|----------------|----------------------------------------------------------------------------------------------|
-| BOOTSTRAP_SERVERS | localhost:9092 | Kafka bootstrap servers list separated by comma                                              |
-| SCHEDULES_TOPICS  | schedules      | Topic list for incoming schedules separated by comma                                         |
-| SINCE_DELTA       | 0              | Number of days to go back for considering missed schedules (0:today, -1: yesterday, etc ...) |
-| GROUP_ID          | scheduler-cg   | Consumer group id for the scheduler consumer                                                 |
-| METRICS_HTTP_ADDR | :8001          | HTTP address where prometheus metrics will be exposed (URI /metrics)                         |
-| HISTORY_TOPIC     | history        | Topic name where a copy of triggered schedules will be kept for auditing                     |
+| Env. Variable        | Default          | Description                                                                                  |
+|----------------------|------------------|----------------------------------------------------------------------------------------------|
+| `CONFIGURATION_FILE` |                  | Optional path to a YAML configuration file (see below)                                       |
+| `BOOTSTRAP_SERVERS`  | `localhost:9092` | Kafka bootstrap servers list separated by comma                                              |
+| `SCHEDULES_TOPICS`   | `schedules`      | Topic list for incoming schedules separated by comma                                         |
+| `SINCE_DELTA`        | `0`              | Number of days to go back for considering missed schedules (0:today, -1: yesterday, etc ...) |
+| `GROUP_ID`           | `scheduler-cg`   | Consumer group id for the scheduler consumer                                                 |
+| `METRICS_HTTP_ADDR`  | `:8001`          | HTTP address where prometheus metrics will be exposed (URI /metrics)                         |
+| `HISTORY_TOPIC`      | `history`        | Topic name where a copy of triggered schedules will be kept for auditing                     |
+
+## YAML configuration file
+
+The `CONFIGURATION_FILE` environment variable specifies the path to a YAML file containing
+additional configuration values:
+
+```
+# kafka.common.configuration specifies a dictionary of librdkafka configuration values to use for
+# both the consumer that reads from the schedule topics and the producer that writes to the target
+# topics and history topic.  The key must be a valid configuration key that is applicable for both
+# producers and consumers, and is specified in
+# https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
+#
+# Values that conflict with the environment variables should be avoided.  For example, setting the
+# "bootstrap.servers" option here will be ignored in favor of the bootstrap servers specified by the
+# "BOOTSTRAP_SERVERS" environment variable (including the default value for the variable).
+kafka.common.configuration:
+    # Example values accepted by librdkafka producers and consumers:
+    sasl.mechanisms: PLAIN
+    sasl.username: cluster username
+    sasl.password: cluster password
+    security.protocol: SASL_SSL
+
+# kafka.producer.configuration is the same as kafka.common.configuration, except these settings
+# are only used for the producer and not the consumer.
+kafka.producer.configuration:
+    # Example values accepted by librdkafka producers:
+    compression.codec: zstd
+    partitioner: murmur2_random
+
+# kafka.consumer.configuration is the same as kafka.common.configuration, except these settings
+# are only used for the consumer and not the producer.
+kafka.consumer.configuration:
+    # Example values accepted by librdkafka consumers:
+    allow.auto.create.topics: true
+```
 
 # Usage
 

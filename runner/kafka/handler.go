@@ -32,7 +32,7 @@ type EventHandler struct {
 	producer     *confluent.Producer
 }
 
-func NewHandler(bootstrapServers, historyTopic string) (EventHandler, error) {
+func NewHandler(kafkaConfiguration confluent.ConfigMap, bootstrapServers, historyTopic string) (EventHandler, error) {
 	if bootstrapServers == "" {
 		return EventHandler{}, fmt.Errorf("bootstrapServers input cannot be empty")
 	}
@@ -41,9 +41,14 @@ func NewHandler(bootstrapServers, historyTopic string) (EventHandler, error) {
 		return EventHandler{}, fmt.Errorf("historyTopic input cannot be empty")
 	}
 
-	producer, err := confluent.NewProducer(&confluent.ConfigMap{
-		"bootstrap.servers": bootstrapServers,
-	})
+	finalCfg := make(confluent.ConfigMap, len(kafkaConfiguration))
+	for k, v := range kafkaConfiguration {
+		finalCfg[k] = v
+	}
+	// these configuration options override the configuration file:
+	finalCfg["bootstrap.servers"] = bootstrapServers
+
+	producer, err := confluent.NewProducer(&finalCfg)
 	if err != nil {
 		return EventHandler{}, err
 	}

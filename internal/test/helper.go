@@ -34,7 +34,7 @@ func NewKafkaStore(t *testing.T, nbTopic int, nbPartitions []int) (store *kafka_
 
 func NewKafkaStoreFromTopics(t *testing.T, topics []string) *kafka_store.Store {
 	sessionTimeout := 6000
-	store, err := kafka_store.NewStore(helper.GetDefaultBootstrapServers(), topics, "scheduler-cg", sessionTimeout)
+	store, err := kafka_store.NewStore(nil, helper.GetDefaultBootstrapServers(), topics, "scheduler-cg", sessionTimeout)
 	if err != nil {
 		t.Fatalf("failed to create kafka store: %v\n", err)
 	}
