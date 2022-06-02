@@ -204,7 +204,7 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 
 	targetMsg := confluent.Message{
 		TopicPartition: confluent.TopicPartition{Topic: &targetTopic, Partition: confluent.PartitionAny},
-		Key:            []byte(msg.TargetKey()),
+		Key:            msg.TargetKey(),
 		Value:          msg.Value,
 		Headers:        headers,
 	}
@@ -216,7 +216,7 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 		headers: targetMsg.Headers,
 	}
 
-	log.Debugf("producing target message with id '%s' on topic '%s'", msg.TargetKey(), targetTopic)
+	log.Debugf("producing target message with id '%s' on topic '%s'", string(msg.TargetKey()), targetTopic)
 
 	return k.producer.Produce(&targetMsg, nil)
 }

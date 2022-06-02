@@ -20,24 +20,24 @@ type Schedule struct {
 	*confluent.Message
 }
 
-func (s Schedule) getHeaderValue(key string) string {
+func (s Schedule) getHeaderValue(key string) []byte {
 	for i := 0; i < len(s.Headers); i++ {
-		if s.Headers[i].Key == key && len(s.Headers[i].Value) > 0 {
-			return string(s.Headers[i].Value)
+		if s.Headers[i].Key == key {
+			return s.Headers[i].Value
 		}
 	}
-	return ""
+	return nil
 }
 
 func (s Schedule) TargetTopic() string {
-	return s.getHeaderValue(TargetTopic)
+	return string(s.getHeaderValue(TargetTopic))
 }
 
 func (s Schedule) Topic() string {
 	return *s.TopicPartition.Topic
 }
 
-func (s Schedule) TargetKey() string {
+func (s Schedule) TargetKey() []byte {
 	return s.getHeaderValue(TargetKey)
 }
 
@@ -58,7 +58,7 @@ func (s Schedule) Timestamp() int64 {
 }
 
 func (s Schedule) Epoch() int64 {
-	epoch := s.getHeaderValue(Epoch)
+	epoch := string(s.getHeaderValue(Epoch))
 	if epoch != "" {
 		n, err := strconv.ParseInt(epoch, 10, 64)
 		if err != nil {
@@ -76,7 +76,7 @@ func (s Schedule) MarshalJSON() ([]byte, error) {
 	m["timestamp"] = s.Timestamp()
 	m["topic"] = s.Topic()
 	m["target-topic"] = s.TargetTopic()
-	m["target-key"] = s.TargetKey()
+	m["target-key"] = string(s.TargetKey())
 	m["value"] = s.Value
 
 	return json.Marshal(m)
