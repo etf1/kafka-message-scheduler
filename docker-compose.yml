@@ -4,9 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
-    command: ["bash", "./scripts/run_tests.sh"]
+    command: ["make", "tests"]
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
 
   zookeeper:
     image: confluentinc/cp-zookeeper
@@ -15,12 +16,24 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      # for health check "ruok"
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ruok' | nc -w 2 localhost 2181 | grep imok"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
 
   kafka:
     image: confluentinc/cp-kafka
-    restart: on-failure
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
     ports:
       # Exposes 9092 for external connections to the broker
       # Use kafka:29092 for connections internal on the docker network
@@ -33,3 +46,4 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
