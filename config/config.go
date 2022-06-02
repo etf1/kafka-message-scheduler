@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -46,7 +45,7 @@ func (f *File) GenerateConsumerConfiguration() confluent.ConfigMap {
 }
 
 func ReadFile(filePath string) (File, error) {
-	body, err := ioutil.ReadFile(filePath)
+	body, err := os.ReadFile(filePath)
 	if err != nil {
 		return File{}, fmt.Errorf("reading configuration file: %w", err)
 	}
