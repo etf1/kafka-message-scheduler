@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/etf1/kafka-message-scheduler/config"
@@ -31,19 +29,23 @@ func initLog() {
 }
 
 func initPprof() func() {
-	timeout := 5 * time.Second
-	startchan := make(chan os.Signal, 1)
-	signal.Notify(startchan, syscall.SIGUSR1)
-
-	stopchan := make(chan os.Signal, 1)
-	signal.Notify(stopchan, syscall.SIGUSR2)
-
 	exitchan := make(chan bool)
 
-	var server *http.Server
+	router := http.NewServeMux()
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	var server = &http.Server{
+		Addr:    ":6060",
+		Handler: router,
+	}
 
 	shutdown := func() {
 		if server != nil {
+			timeout := 5 * time.Second
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			log.Printf("shutting down pprof server")
@@ -53,37 +55,16 @@ func initPprof() func() {
 
 	closePprof := func() {
 		shutdown()
-		exitchan <- true
+		<-exitchan
 	}
 
-	router := http.NewServeMux()
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
-
 	go func() {
-		defer log.Printf("pprof launcher exited")
-		for {
-			select {
-			case <-exitchan:
-				return
-			case <-stopchan:
-				shutdown()
-			case <-startchan:
-				server = &http.Server{
-					Addr:    ":6060",
-					Handler: router,
-				}
-				go func() {
-					log.Printf("starting http pprof server")
-					log.Println(server.ListenAndServe())
-					log.Printf("http server pprof shutted down")
-					server = nil
-				}()
-			}
-		}
+		defer func() {
+			exitchan <- true
+			log.Printf("http server pprof shutted down")
+		}()
+		log.Printf("starting http pprof server")
+		log.Println(server.ListenAndServe())
 	}()
 
 	return closePprof
