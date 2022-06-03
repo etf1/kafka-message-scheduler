@@ -124,6 +124,7 @@ issues:
         - gomnd
         - gocyclo
         - unparam
+        - goconst
 
     # https://github.com/go-critic/go-critic/issues/926
     - linters:
