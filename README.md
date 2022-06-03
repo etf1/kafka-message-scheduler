@@ -33,7 +33,7 @@ Warning: if the payload of the message changes, a new schedule message should be
 Example:
 
 Schedule message:
-```
+```yaml
 Headers:
     scheduler-epoch: 1893456000
     scheduler-target-topic: online-videos
@@ -45,7 +45,7 @@ Value: "video 1"
 ```
 
 Triggered message in topic 'online-videos':
-```
+```yaml
 Headers:
     scheduler-timestamp: 1607918336 # original message timestamp
     scheduler-key: vid1-online
@@ -91,7 +91,7 @@ The scheduler can be configured with environment variables:
 The `CONFIGURATION_FILE` environment variable specifies the path to a YAML file containing
 additional configuration values:
 
-```
+```yaml
 # kafka.common.configuration specifies a dictionary of librdkafka configuration values to use for
 # both the consumer that reads from the schedule topics and the producer that writes to the target
 # topics and history topic.  The key must be a valid configuration key that is applicable for both
@@ -128,19 +128,19 @@ You can use kafka message scheduler with docker or as code in your go program:
 
 * go run :
 
-```
+```ruby
 BOOTSTRAP_SERVERS="kafka:9092" go run ./cmd/kafka
 ```
 
 * docker run :
 
-```
+```ruby
 docker run -e BOOTSTRAP_SERVERS="kafka:9092" etf1/kafka-message-scheduler
 ```
 
 * as code in your go program:
 
-```
+```go
 import(
     runner "github.com/etf1/kafka-message-scheduler/runner/kafka"
 )
@@ -161,7 +161,7 @@ kafkaRunner.Close()
 The topic used by the scheduler has to be compacted and retention unlimited otherwise you will loose schedules. 
 If you plan to run multiple instances of the scheduler for example 3, you need at least 3 partitions in the topic.
 
-```
+```ruby
 kafka-topics --bootstrap-server "${BOOTSTRAP_SERVERS}" --create --topic schedules \
              --partitions 3 --config "cleanup.policy=compact" --config "retention.ms=-1"
 ```
@@ -170,7 +170,7 @@ kafka-topics --bootstrap-server "${BOOTSTRAP_SERVERS}" --create --topic schedule
 
 Triggered schedules are stored in the history topic specified by the env. variable `HISTORY_TOPIC`.
 
-```
+```ruby
 kafka-topics --bootstrap-server "${BOOTSTRAP_SERVERS}" --create --topic history
 ```
 
@@ -181,13 +181,13 @@ This version is useful for integration tests with the scheduler rest api.
 
 * go run :
 
-```
+```ruby
 go run ./cmd/mini
 ```
 
 * docker run :
 
-```
+```ruby
 docker run etf1/kafka-message-scheduler:mini
 ```
 # Admin GUI
