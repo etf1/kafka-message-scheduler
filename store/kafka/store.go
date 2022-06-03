@@ -54,7 +54,6 @@ func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topic
 	finalCfg["go.application.rebalance.enable"] = true
 
 	consumer, err := kafka.NewConsumer(&finalCfg)
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot create kafka consumer for the store: %w", err)
 	}

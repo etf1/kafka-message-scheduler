@@ -1,0 +1,12 @@
+kafka.common.configuration:
+  # should be overridden by BOOTSTRAP_SERVERS env. var.
+  bootstrap.servers: undefined
+  compression.codec: zstd
+kafka.producer.configuration:
+  # should be overridden by BOOTSTRAP_SERVERS env. var.
+  bootstrap.servers: undefined
+  batch.size: 1000001
+kafka.consumer.configuration:
+  # should be overridden by BOOTSTRAP_SERVERS env. var.
+  bootstrap.servers: undefined
+  heartbeat.interval.ms: 3500

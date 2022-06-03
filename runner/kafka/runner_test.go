@@ -53,8 +53,10 @@ func TestDefaultKafkaRunner(t *testing.T) {
 	}()
 
 	epoch := time.Now().Add(10 * time.Second).Unix()
-	msg := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
-	msgs := []*confluent.Message{msg}
+	msg1 := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
+	// message with nil target key should work
+	msg2 := fullMessage(schedulesTopic, scheduleKey+"2", someValue, epoch, targetTopic, nil)
+	msgs := []*confluent.Message{msg1, msg2}
 
 	produceMessages(t, msgs)
 
@@ -70,8 +72,8 @@ loop:
 	}
 
 	type tuple struct {
-		key   string
-		value []byte
+		Key   []byte
+		Value []byte
 	}
 
 	checkMessage := func(topic string, expected []tuple) {
@@ -81,27 +83,35 @@ loop:
 			t.Fatalf("unexpected result length: %v", len(result))
 		}
 
-		for i, v := range expected {
-			if string(result[i].Key) != v.key {
-				t.Fatalf("unexpected key: %v", result[i].Key)
+		for _, ve := range expected {
+			found := false
+			for _, vr := range result {
+				if bytes.Equal(ve.Key, vr.Key) && bytes.Equal(ve.Value, vr.Value) {
+					found = true
+					break
+				}
 			}
-			if !bytes.Equal(result[i].Value, v.value) {
-				t.Fatalf("unexpected value: %v", result[i].Key)
+			if !found {
+				t.Fatalf("expected element not found: %+v", ve)
 			}
 		}
 	}
 
-	expectedMsg := []tuple{{key: targetKey, value: someValue}}
+	expectedMsg := []tuple{{Key: []byte(targetKey), Value: someValue}, {Key: nil, Value: someValue}}
 
-	// check message is in the target topic
+	t.Logf("check message in target topic")
+	// check messages are in the target topic
 	checkMessage(targetTopic, expectedMsg)
 
-	// check message is in the history topic
+	t.Logf("check message in history topic")
+	// check messages are in the history topic
 	checkMessage(historyTopic, expectedMsg)
 
-	expectedSchedules := []tuple{{key: scheduleKey, value: someValue}, {key: scheduleKey, value: nil}}
+	expectedSchedules := []tuple{{Key: []byte(scheduleKey), Value: someValue}, {Key: []byte(scheduleKey + "2"), Value: someValue},
+		{Key: []byte(scheduleKey), Value: nil}, {Key: []byte(scheduleKey + "2"), Value: nil}}
 
-	// check message is in the history topic
+	t.Logf("check message in schedules topic")
+	// check message and tombstone message are in schedules topic
 	checkMessage(schedulesTopic, expectedSchedules)
 }
 
@@ -110,7 +120,7 @@ loop:
 // then we stop and start each scheduler time to time.
 // We should get in the target topic the exact number of schedules planned.
 // Each scheduler should recover and not produce less or more messages than planned schedules originally.
-func TestResilience(t *testing.T) {
+func TestDefaultKafkaRunner_resilience(t *testing.T) {
 	topics := createTopics(t, 3, []int{3, 1, 1}, "scheduler")
 
 	// scheduler topic with 3 partitions
@@ -200,4 +210,92 @@ loop:
 	if len(result) < 100 {
 		t.Fatalf("unexpected result length: %v", len(result))
 	}
+}
+
+// Make sure scheduler configured with a yaml file runs correctly
+func TestDefaultKafkaRunner_yaml_configuration(t *testing.T) {
+	topics := createTopics(t, 3, []int{2, 1, 1}, "scheduler")
+
+	someValue := []byte("some value")
+	targetKey := "target-key"
+	scheduleKey := "schedule-key"
+
+	// scheduler topic
+	schedulesTopic := topics[0]
+	// history topic for audit
+	historyTopic := topics[1]
+	// the topic where the message should be delivered
+	targetTopic := topics[2]
+
+	os.Setenv("CONFIGURATION_FILE", "config_test.yaml")
+	os.Setenv("BOOTSTRAP_SERVERS", getBootstrapServers())
+	os.Setenv("SCHEDULES_TOPICS", schedulesTopic)
+	os.Setenv("HISTORY_TOPIC", historyTopic)
+
+	kafkaRunner := kafka.NewRunner(kafka.DefaultConfig(), kafka.DefaultSince(), hmapcoll.New())
+
+	exitchan := make(chan bool)
+
+	go func() {
+		if err := kafkaRunner.Start(); err != nil {
+			log.Printf("failed to create the default kafka runner: %v", err)
+		}
+		exitchan <- true
+	}()
+
+	epoch := time.Now().Add(10 * time.Second).Unix()
+	msg := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
+	msgs := []*confluent.Message{msg}
+
+	produceMessages(t, msgs)
+
+loop:
+	for {
+		select {
+		case <-time.After(20 * time.Second):
+			kafkaRunner.Close()
+		case <-exitchan:
+			println("break loop")
+			break loop
+		}
+	}
+
+	type tuple struct {
+		Key   []byte
+		Value []byte
+	}
+
+	checkMessage := func(topic string, expected []tuple) {
+		result := consumeMessages(t, topic)
+
+		if len(result) != len(expected) {
+			t.Fatalf("unexpected result length: %v", len(result))
+		}
+
+		for _, ve := range expected {
+			found := false
+			for _, vr := range result {
+				if bytes.Equal(ve.Key, vr.Key) && bytes.Equal(ve.Value, vr.Value) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("expected element not found: %+v", ve)
+			}
+		}
+	}
+
+	expectedMsg := []tuple{{Key: []byte(targetKey), Value: someValue}}
+
+	// check message is in the target topic
+	checkMessage(targetTopic, expectedMsg)
+
+	// check message is in the history topic
+	checkMessage(historyTopic, expectedMsg)
+
+	expectedSchedules := []tuple{{Key: []byte(scheduleKey), Value: someValue}, {Key: []byte(scheduleKey), Value: nil}}
+
+	// check message is in the history topic
+	checkMessage(schedulesTopic, expectedSchedules)
 }

@@ -812,6 +812,7 @@ loop:
 }
 
 // Test issue #8 : https://github.com/etf1/kafka-message-scheduler/issues/8
+// scheduler deadlock when many schedules with same id and same epoch=now
 func TestScheduler_issue8(t *testing.T) {
 	store := hmap.New()
 	coll := hmapcoll.New()
