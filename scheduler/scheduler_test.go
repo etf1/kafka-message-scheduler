@@ -13,7 +13,6 @@ import (
 	"github.com/etf1/kafka-message-scheduler/schedule"
 	"github.com/etf1/kafka-message-scheduler/schedule/simple"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -863,7 +862,6 @@ loop:
 // When scheduler is starting with processing missed events and there is a DeleteByFunc event, the scheduler
 // seems to be in a dead lock situation
 func TestScheduler_issue32(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 	store := hmap.New()
 	coll := hmapcoll.New()
 
