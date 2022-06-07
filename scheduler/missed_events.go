@@ -52,7 +52,7 @@ func (m *missedEvents) deleteByFunc(f func(s schedule.Schedule) bool) {
 
 	for _, s := range m.schedules {
 		if f(s) {
-			m.delete(s)
+			delete(m.schedules, s.ID())
 		}
 	}
 }

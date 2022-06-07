@@ -3,6 +3,7 @@ package scheduler_test
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/etf1/kafka-message-scheduler/schedule"
 	"github.com/etf1/kafka-message-scheduler/schedule/simple"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -573,7 +575,9 @@ func TestScheduler_delete_schedules(t *testing.T) {
 
 	// schedules added after scheduler start
 	store.Add(simpleSchedule("2", now.Add(4*time.Second)))
-	store.DeleteByFunc(simpleSchedule("2", 0))
+	store.DeleteByFunc(func(sch schedule.Schedule) bool {
+		return sch.ID() == "2"
+	})
 	store.Add(s3)
 
 	events := s.Events()
@@ -851,6 +855,63 @@ loop:
 	printReceivedEvents(t, result)
 
 	if len(result) != 25 {
+		t.Fatalf("unexpected result length: %v", len(result))
+	}
+}
+
+// Test issue 32: https://github.com/etf1/kafka-message-scheduler/issues/32
+// When scheduler is starting with processing missed events and there is a DeleteByFunc event, the scheduler
+// seems to be in a dead lock situation
+func TestScheduler_issue32(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	store := hmap.New()
+	coll := hmapcoll.New()
+
+	now := time.Now()
+	passed := now.Add(-20 * time.Second)
+
+	// schedules added before scheduler start
+	for i := 1; i <= 1000; i++ {
+		store.Add(simpleSchedule(i, now.Add(-10*time.Second), passed))
+	}
+
+	// delete half of the schedules
+	store.DeleteByFunc(func(sch schedule.Schedule) bool {
+		i, err := strconv.Atoi(sch.ID())
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		return i%2 == 0
+	})
+
+	startOfToday := scheduler.StartOfToday()
+	s := scheduler.New(store, coll)
+	defer s.Close()
+
+	s.Start(startOfToday)
+
+	events := s.Events()
+
+	result := make([]ReceivedEvent, 0)
+loop:
+	for {
+		select {
+		case evt := <-events:
+			epoch := time.Now().Unix()
+			t.Logf("received %T %v\n", evt, evt)
+			result = append(result, ReceivedEvent{
+				evt,
+				epoch,
+			})
+		case <-time.After(15 * time.Second):
+			t.Logf("select timeout")
+			break loop
+		}
+	}
+
+	printReceivedEvents(t, result)
+
+	if len(result) != 500 {
 		t.Fatalf("unexpected result length: %v", len(result))
 	}
 }
