@@ -2,10 +2,10 @@ VERSION ?= $(shell git describe --always --abbrev=1 --tags --match "v[0-9]*")
 LDFLAGS=-ldflags "-X main.version=${VERSION}"
 TMPDIR := $(shell mktemp -d)
 
-up:
+dev.up:
 	docker-compose -p dev up -d kafka
 
-down:
+dev.down:
 	docker-compose -p dev down -v
 
 build:
@@ -44,9 +44,9 @@ tests: builds lints
 	cd clientlib && $(MAKE) test -f ../Makefile
 
 tests.docker:
-	docker-compose -p testsenv build tests && \
-	docker-compose -p testsenv up --exit-code-from tests tests && ret=$$? && \
-	docker-compose -p testsenv down -v && exit $$ret
+	docker-compose -p testsenv build tests; \
+	docker-compose -p testsenv up --exit-code-from tests tests; ret=$$?; \
+	docker-compose -p testsenv down -v; exit $$ret;
 
 docker:
 	docker build -t etf1/kafka-message-scheduler:${VERSION} -f ./cmd/kafka/Dockerfile .

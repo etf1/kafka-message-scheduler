@@ -42,7 +42,7 @@ func TestDefaultKafkaRunner(t *testing.T) {
 	os.Setenv("SCHEDULES_TOPICS", schedulesTopic)
 	os.Setenv("HISTORY_TOPIC", historyTopic)
 
-	kafkaRunner := kafka.DefaultRunner()
+	kafkaRunner := kafka.NewRunner(kafka.DefaultConfig(), kafka.DefaultSince(), hmapcoll.New())
 	exitchan := make(chan bool)
 
 	go func() {
@@ -297,5 +297,95 @@ loop:
 	expectedSchedules := []tuple{{Key: []byte(scheduleKey), Value: someValue}, {Key: []byte(scheduleKey), Value: nil}}
 
 	// check message is in the history topic
+	checkMessage(schedulesTopic, expectedSchedules)
+}
+
+// Issue #30: https://github.com/etf1/kafka-message-scheduler/issues/30
+// make sure invalid schedules are deleted from the topic
+func TestDefaultKafkaRunner_issue30(t *testing.T) {
+	topics := createTopics(t, 3, []int{2, 1, 1}, "scheduler")
+
+	someValue := []byte("some value")
+	targetKey := "target-key"
+	scheduleKey := "schedule-key"
+
+	// scheduler topic
+	schedulesTopic := topics[0]
+	// history topic for audit
+	historyTopic := topics[1]
+	// the topic where the message should be delivered
+	targetTopic := topics[2]
+
+	os.Setenv("BOOTSTRAP_SERVERS", getBootstrapServers())
+	os.Setenv("SCHEDULES_TOPICS", schedulesTopic)
+	os.Setenv("HISTORY_TOPIC", historyTopic)
+
+	kafkaRunner := kafka.NewRunner(kafka.DefaultConfig(), kafka.DefaultSince(), hmapcoll.New())
+	exitchan := make(chan bool)
+
+	go func() {
+		if err := kafkaRunner.Start(); err != nil {
+			log.Printf("failed to create the default kafka runner: %v", err)
+		}
+		exitchan <- true
+	}()
+
+	time.Sleep(10 * time.Second)
+
+	epoch := time.Now().Add(-1 * time.Second).Unix()
+	msg := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
+	msgs := []*confluent.Message{msg}
+
+	produceMessages(t, msgs)
+
+loop:
+	for {
+		select {
+		case <-time.After(10 * time.Second):
+			kafkaRunner.Close()
+		case <-exitchan:
+			println("break loop")
+			break loop
+		}
+	}
+
+	type tuple struct {
+		Key   []byte
+		Value []byte
+	}
+
+	checkMessage := func(topic string, expected []tuple) {
+		result := consumeMessages(t, topic)
+
+		if len(result) != len(expected) {
+			t.Fatalf("unexpected result length: %v, expected: %v", len(result), len(expected))
+		}
+
+		for _, ve := range expected {
+			found := false
+			for _, vr := range result {
+				if bytes.Equal(ve.Key, vr.Key) && bytes.Equal(ve.Value, vr.Value) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("expected element not found: %+v", ve)
+			}
+		}
+	}
+
+	t.Logf("check message NOT in target topic")
+	// check messages are not in the target topic
+	checkMessage(targetTopic, []tuple{})
+
+	t.Logf("check message NOT in history topic")
+	// check messages are not in the history topic
+	checkMessage(historyTopic, []tuple{})
+
+	expectedSchedules := []tuple{{Key: []byte(scheduleKey), Value: someValue}, {Key: []byte(scheduleKey), Value: nil}}
+
+	t.Logf("check messages in schedules topic")
+	// check invalid message and tombstone message are in schedules topic because it should be deleted from the topic
 	checkMessage(schedulesTopic, expectedSchedules)
 }

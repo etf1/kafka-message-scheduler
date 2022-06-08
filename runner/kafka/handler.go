@@ -80,7 +80,7 @@ func NewHandler(kafkaConfiguration confluent.ConfigMap, bootstrapServers, histor
 				}
 				// if not message from history and not a tombstone message, then it is a regular schedule message
 				if topic(ev) != historyTopic && !emptyValue(ev) {
-					err := k.produceTombstoneMessage(ev)
+					err := k.produceTombstoneMessageForOriginalSchedule(ev)
 					if err != nil {
 						log.Errorf("unable to produce tombstone message with id '%s': %v", key(ev), err)
 					}
@@ -122,7 +122,7 @@ func (k EventHandler) produceHistoryMessage(msg *confluent.Message) error {
 		Headers:        headers,
 	}
 
-	log.Debugf("producing history message with id '%s' on topic '%s'", string(msg.Key), k.historyTopic)
+	log.Printf("producing history message with id '%s' on topic '%s'", string(msg.Key), k.historyTopic)
 
 	return k.producer.Produce(&historyMsg, nil)
 }
@@ -144,7 +144,7 @@ func getHeaderValue(headers []confluent.Header, key string) (string, bool) {
 	return "", false
 }
 
-func (k EventHandler) produceTombstoneMessage(msg *confluent.Message) error {
+func (k EventHandler) produceTombstoneMessageForOriginalSchedule(msg *confluent.Message) error {
 	headers := getHeadersFromOpaque(msg)
 
 	originalKey, foundKey := getHeaderValue(headers, OriginalKey)
@@ -166,7 +166,21 @@ func (k EventHandler) produceTombstoneMessage(msg *confluent.Message) error {
 		Headers: headers,
 	}
 
-	log.Debugf("producing tombstone message with id '%s' on topic '%s'", originalKey, originalTopic)
+	log.Printf("producing tombstone for original schedule with id '%s' on topic '%s'", originalKey, originalTopic)
+
+	return k.producer.Produce(&tombstoneMsg, nil)
+}
+
+func (k EventHandler) produceTombstoneMessage(msg *confluent.Message) error {
+	tombstoneMsg := confluent.Message{
+		TopicPartition: confluent.TopicPartition{Topic: msg.TopicPartition.Topic, Partition: confluent.PartitionAny},
+		Key:            msg.Key,
+		// tombstone is message with nil or empty value
+		Value:   nil,
+		Headers: msg.Headers,
+	}
+
+	log.Printf("producing tombstone message with id '%s' on topic '%s'", msg.Key, *msg.TopicPartition.Topic)
 
 	return k.producer.Produce(&tombstoneMsg, nil)
 }
@@ -216,7 +230,7 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 		headers: targetMsg.Headers,
 	}
 
-	log.Debugf("producing target message with id '%s' on topic '%s'", string(msg.TargetKey()), targetTopic)
+	log.Printf("producing target message with id '%s' on topic '%s'", string(msg.TargetKey()), targetTopic)
 
 	return k.producer.Produce(&targetMsg, nil)
 }
@@ -225,6 +239,18 @@ func (k EventHandler) Handle(event scheduler.Event) {
 	switch evt := event.(type) {
 	case schedule.InvalidSchedule:
 		log.Printf("received an InvalidSchedule event: %T %+v errors=%v", evt, evt, evt.Errors)
+		// when receiving an InvalidSchedule we should delete it from the topic, so it will not be
+		// triggered if the scheduler restarts
+		msg, ok := evt.Schedule.(kafka.Schedule)
+		if !ok {
+			log.Errorf("event is not a kafka.Schedule: %T %+v", event, event)
+			break
+		}
+		err := k.produceTombstoneMessage(msg.Message)
+		if err != nil {
+			log.Errorf("unable to produce tombstone message %v %v", evt, err)
+		}
+
 	case schedule.MissedSchedule:
 		log.Printf("received a MissedSchedule event: %T %v", evt, evt)
 		msg, ok := evt.Schedule.(kafka.Schedule)
