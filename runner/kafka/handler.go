@@ -238,7 +238,7 @@ func (k EventHandler) produceTargetMessage(msg kafka.Schedule) error {
 func (k EventHandler) Handle(event scheduler.Event) {
 	switch evt := event.(type) {
 	case schedule.InvalidSchedule:
-		log.Printf("received an InvalidSchedule event: %T %+v errors=%v", evt, evt, evt.Errors)
+		log.Printf("received an InvalidSchedule event: %T %+v error=%v", evt, evt, evt.Error)
 		// when receiving an InvalidSchedule we should delete it from the topic, so it will not be
 		// triggered if the scheduler restarts
 		msg, ok := evt.Schedule.(kafka.Schedule)

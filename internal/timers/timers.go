@@ -45,17 +45,17 @@ func New() Timers {
 	return timers
 }
 
-func (ts Timers) Add(s schedule.Schedule) []error {
+func (ts Timers) Add(s schedule.Schedule) error {
 	ts.mutex.Lock()
 	defer ts.mutex.Unlock()
 
-	errors := schedule.CheckSchedule(s)
-	if len(errors) > 0 {
-		return errors
+	err := schedule.CheckSchedule(s)
+	if err != nil {
+		return err
 	}
 
 	if s.Epoch() < time.Now().Unix() {
-		return []error{fmt.Errorf("%w : %+v", schedule.ErrOutdatedScheduleEpoch, s)}
+		return fmt.Errorf("%w : %+v", schedule.ErrOutdatedScheduleEpoch, s)
 	}
 
 	// if found, we stop the existing timer

@@ -100,7 +100,10 @@ func TestServer_schedules_found(t *testing.T) {
 
 	now := time.Now()
 	epoch := now.Add(10 * time.Second)
-	s.Add(simple.NewSchedule("1", epoch, now))
+	err := s.Add(simple.NewSchedule("1", epoch, now))
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
@@ -117,7 +120,7 @@ func TestServer_schedules_found(t *testing.T) {
 	}
 
 	list := []schedule{}
-	err := json.Unmarshal(response.Body.Bytes(), &list)
+	err = json.Unmarshal(response.Body.Bytes(), &list)
 	if err != nil {
 		t.Fatalf("unable to unmarshall json body: %v - %s", err, response.Body.Bytes())
 	}

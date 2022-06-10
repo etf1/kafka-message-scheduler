@@ -70,7 +70,7 @@ func TestScheduler_trigger_epoch(t *testing.T) {
 	}
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -147,7 +147,7 @@ func TestScheduler_update_epoch(t *testing.T) {
 	}
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -220,7 +220,7 @@ func TestScheduler_live_schedules_not_today(t *testing.T) {
 	coll := hmapcoll.New()
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -291,7 +291,7 @@ func TestScheduler_outdated_schedule(t *testing.T) {
 	}
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -368,7 +368,7 @@ func TestScheduler_ignore_invalid_schedules(t *testing.T) {
 	}
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -445,7 +445,7 @@ func TestScheduler_missed_schedules_first(t *testing.T) {
 	}
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -512,7 +512,7 @@ func TestScheduler_deleted_schedule(t *testing.T) {
 	store.Delete(simpleSchedule("1", 0, passed))
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -563,7 +563,7 @@ func TestScheduler_delete_schedules(t *testing.T) {
 	expected = append(expected, s1)
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -642,7 +642,7 @@ func TestScheduler_scheduler_since(t *testing.T) {
 				store.Add(schedule)
 			}
 
-			s := scheduler.New(store, coll)
+			s := scheduler.New(store, coll, nil)
 			defer s.Close()
 
 			s.Start(c.since)
@@ -698,7 +698,7 @@ func TestScheduler_collector(t *testing.T) {
 	}
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -766,7 +766,7 @@ func TestScheduler_isalive(t *testing.T) {
 	coll := hmapcoll.New()
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -821,7 +821,7 @@ func TestScheduler_issue8(t *testing.T) {
 	coll := hmapcoll.New()
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)
@@ -883,7 +883,7 @@ func TestScheduler_issue32(t *testing.T) {
 	})
 
 	startOfToday := scheduler.StartOfToday()
-	s := scheduler.New(store, coll)
+	s := scheduler.New(store, coll, nil)
 	defer s.Close()
 
 	s.Start(startOfToday)

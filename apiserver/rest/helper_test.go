@@ -12,7 +12,7 @@ import (
 )
 
 func newServer() (srv rest.Server, closeFunc func()) {
-	sch := scheduler.New(hmap.New(), hmapcoll.New())
+	sch := scheduler.New(hmap.New(), hmapcoll.New(), nil)
 	sch.Start(scheduler.StartOfToday())
 
 	srv = rest.New(&sch)

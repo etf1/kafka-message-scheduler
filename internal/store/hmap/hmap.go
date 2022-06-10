@@ -58,11 +58,11 @@ func (h Hmap) DeleteByFunc(f func(sch schedule.Schedule) bool) {
 
 func (h Hmap) Add(s schedule.Schedule) {
 	sch := s
-	errs := schedule.CheckSchedule(s)
-	if len(errs) > 0 {
+	err := schedule.CheckSchedule(s)
+	if err != nil {
 		sch = schedule.InvalidSchedule{
 			Schedule: s,
-			Errors:   errs,
+			Error:    err,
 		}
 	}
 	h.events <- sch
