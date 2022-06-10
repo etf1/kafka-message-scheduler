@@ -151,7 +151,7 @@ func (m *missedEvents) start(input <-chan store.Event) <-chan Event {
 		m.reset()
 
 		// timeout, when no events are coming
-		duration := 500 * time.Millisecond
+		duration := 1000 * time.Millisecond
 		timeout := time.NewTimer(duration)
 		defer timeout.Stop()
 

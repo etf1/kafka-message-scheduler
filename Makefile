@@ -37,11 +37,11 @@ lints:
 	cd clientlib && $(MAKE) lint -f ../Makefile
 
 test:
-	go test -v -tags musl -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+	go test -v -tags musl -race -count=1 ./... - run=^TestScheduler_trigger_epoch -coverprofile=coverage.txt -covermode=atomic
 
 tests: builds lints
 	$(MAKE) test
-	cd clientlib && $(MAKE) test -f ../Makefile
+	# cd clientlib && $(MAKE) test -f ../Makefile
 
 tests.docker:
 	docker-compose -p testsenv build tests; \
