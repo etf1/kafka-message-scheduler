@@ -14,11 +14,10 @@ jobs:
         uses: actions/checkout@v2      
       - name: Build & test  
         run: make tests.docker
-      # - name: Upload coverage report
-      #   uses: codecov/codecov-action@v1.0.2
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     directory: ./build
-      #     file: ./coverage.txt
-      #     flags: unittests
-      #     name: codecov-umbrella
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/coverage.txt
+          flags: unittests
+          name: codecov-umbrella
