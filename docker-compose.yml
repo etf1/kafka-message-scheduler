@@ -4,10 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
-    command: ["make", "tests"]
-    volumes:
-      - .:/build
-    working_dir: /build
+    command: ["make", "test"]
+    # volumes:
+    #   - .:/build
+    # working_dir: /build
     depends_on:
       kafka:
         condition: service_healthy
