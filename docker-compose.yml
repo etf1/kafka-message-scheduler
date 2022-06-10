@@ -5,8 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile.test
     command: ["make", "test"]
-    volumes:
-      - .:.
     depends_on:
       kafka:
         condition: service_healthy
