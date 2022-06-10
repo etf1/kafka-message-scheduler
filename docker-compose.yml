@@ -7,6 +7,7 @@ services:
     command: ["make", "tests"]
     volumes:
       - .:/build
+    working_dir: /build
     depends_on:
       kafka:
         condition: service_healthy
