@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
-    command: ["make", "test"]
+    command: ["make", "tests"]
     volumes:
       - ./coverage:/build/coverage
     depends_on:
