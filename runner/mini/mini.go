@@ -57,7 +57,7 @@ func (r *Runner) Start() error {
 
 	handler := NewHandler(store)
 
-	sch := scheduler.New(store, hmapcoll.New())
+	sch := scheduler.New(store, hmapcoll.New(), nil)
 	sch.Start(scheduler.StartOfToday())
 
 	srv := rest.New(&sch)

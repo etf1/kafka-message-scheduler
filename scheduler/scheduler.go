@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"errors"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -23,29 +24,62 @@ type Error interface {
 	Event
 }
 
+// OutdatedScheduleStrategy allows to specify a strategy for outdated schedules
+// either consider it as valid or invalid depending on a grace interval
+type OutdatedScheduleStrategy interface {
+	IsValid(s schedule.Schedule) bool
+}
+
+// check outdated schedule with a number of second between now and now - nbSecond
+type intervalOutdatedScheduleStrategy uint
+
+func (i intervalOutdatedScheduleStrategy) IsValid(s schedule.Schedule) bool {
+	now := time.Now()
+	if now.Add(time.Duration(-i)*time.Second).Unix() <= s.Epoch() && s.Epoch() <= now.Unix() {
+		return true
+	}
+	return false
+}
+
+func NewOutdatedScheduleStrategyBySecond(nbSecond uint) OutdatedScheduleStrategy {
+	return intervalOutdatedScheduleStrategy(nbSecond)
+}
+
+func DefaultOutdatedScheduleStrategyBySecond() OutdatedScheduleStrategy {
+	return intervalOutdatedScheduleStrategy(0)
+}
+
 type Scheduler struct {
 	instrument.Collector
 	timers.Timers
 	store.Store
-	events       chan Event
-	missedEvents *missedEvents
-	livenessChan chan schedule.Schedule
+	outdatedScheduleStrategy OutdatedScheduleStrategy
+	events                   chan Event
+	missedEvents             *missedEvents
+	livenessChan             chan schedule.Schedule
 }
 
-func New(s store.Store, collector instrument.Collector) Scheduler {
+func New(s store.Store, collector instrument.Collector, oss OutdatedScheduleStrategy) Scheduler {
 	ts := timers.New()
 	missedEvents := newMissedEvents()
 	events := make(chan Event, eventsChanBuffer)
 	livenessChan := make(chan schedule.Schedule, 1)
 
-	return Scheduler{
+	sch := Scheduler{
 		collector,
 		ts,
 		s,
+		oss,
 		events,
 		missedEvents,
 		livenessChan,
 	}
+
+	if oss == nil {
+		sch.outdatedScheduleStrategy = DefaultOutdatedScheduleStrategyBySecond()
+	}
+
+	return sch
 }
 
 func (sch Scheduler) Events() chan Event {
@@ -62,15 +96,31 @@ func (sch Scheduler) GetPlannedSchedules() []schedule.Schedule {
 }
 
 func (sch Scheduler) addToTimers(s schedule.Schedule) {
-	errs := sch.Timers.Add(s)
-	if len(errs) > 0 {
-		log.Debugf("add to timers failed: %+v %v", s, errs)
-		sch.events <- schedule.InvalidSchedule{
-			Schedule: s,
-			Errors:   errs,
+	err := sch.Timers.Add(s)
+	if err != nil {
+		log.Debugf("add to timers failed: %+v %v", s, err)
+		// if err is outdated schedule
+		if errors.Is(err, schedule.ErrOutdatedScheduleEpoch) {
+			// check with defined outdated strategy, if the schedule is still valid
+			if sch.outdatedScheduleStrategy.IsValid(s) {
+				log.Debugf("outdated schedule strategy is valid: %+v", s)
+				sch.events <- s
+				sch.Inc(instrument.TriggeredSchedule)
+			} else {
+				log.Debugf("outdated schedule strategy is invalid: %+v", s)
+				sch.events <- schedule.InvalidSchedule{
+					Schedule: s,
+					Error:    err,
+				}
+				sch.Inc(instrument.InvalidSchedule)
+			}
 		}
 	} else {
-		log.Debugf("added to timers: %+v", s)
+		log.Debugf("schedule added to timers: %+v", s)
+		// isAlive probe should not be added to collector
+		if !isIsAliveSchedule(s) {
+			sch.Inc(instrument.PlannedSchedule)
+		}
 	}
 }
 
@@ -83,7 +133,6 @@ func (sch Scheduler) processMissedEvent(e Event) {
 	case schedule.Schedule:
 		log.Debugf("from missed events: %+v", evt)
 		sch.addToTimers(evt)
-		sch.Inc(instrument.PlannedSchedule)
 	default:
 		sch.events <- evt
 		sch.Inc(instrument.Other)
@@ -125,7 +174,6 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 			if isIsAliveSchedule(evt) {
 				break
 			}
-			sch.Inc(instrument.PlannedSchedule)
 		}
 		if sch.missedEvents.contains(evt) {
 			coldEvents <- evt

@@ -102,11 +102,11 @@ func (ks *Store) processMessage() {
 		sch := kafka_schedule.Schedule{
 			Message: evt,
 		}
-		errs := schedule.CheckSchedule(sch)
-		if len(errs) > 0 {
+		err := schedule.CheckSchedule(sch)
+		if err != nil {
 			ks.events <- schedule.InvalidSchedule{
 				Schedule: sch,
-				Errors:   errs,
+				Error:    err,
 			}
 			break
 		}

@@ -3,15 +3,14 @@ package schedule
 import "strings"
 
 // checks if schedule id and epoch are valid
-func CheckSchedule(s Schedule) []error {
-	result := make([]error, 0)
+func CheckSchedule(s Schedule) error {
 	if strings.TrimSpace(s.ID()) == "" {
-		result = append(result, ErrInvalidScheduleID)
+		return ErrInvalidScheduleID
 	}
 	if s.Epoch() < 0 {
-		result = append(result, ErrInvalidScheduleEpoch)
+		return ErrInvalidScheduleEpoch
 	}
-	return result
+	return nil
 }
 
 // checks if two slices of schedules are the same (order doesn't matter)

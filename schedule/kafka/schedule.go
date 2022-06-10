@@ -49,7 +49,7 @@ func (s Schedule) IsDeleted() bool {
 	return s.Value == nil
 }
 
-func (s Schedule) HasErrors() []error {
+func (s Schedule) CheckSchedule() error {
 	return schedule.CheckSchedule(s)
 }
 

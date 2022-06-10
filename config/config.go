@@ -124,3 +124,7 @@ func SchedulesTopics() []string {
 func HistoryTopic() string {
 	return getString("HISTORY_TOPIC", "history")
 }
+
+func ScheduleGraceInterval() int {
+	return getInt("SCHEDULE_GRACE_INTERVAL", 0)
+}

@@ -31,7 +31,7 @@ type MissedSchedule struct {
 // InvalidSchedule represents an invalid schedules (bad epoch)
 type InvalidSchedule struct {
 	Schedule
-	Errors []error
+	Error error
 }
 
 // DeletedSchedule is a deleted schedule in the store

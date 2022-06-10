@@ -18,12 +18,13 @@ import (
 )
 
 type Config struct {
-	FilePath         string
-	BootstrapServers string
-	HistoryTopic     string
-	GroupID          string
-	SessionTimeout   int
-	SchedulesTopics  []string
+	FilePath              string
+	BootstrapServers      string
+	HistoryTopic          string
+	GroupID               string
+	SessionTimeout        int
+	SchedulesTopics       []string
+	ScheduleGraceInterval uint
 }
 
 func (c Config) String() string {
@@ -44,6 +45,7 @@ type Runner struct {
 	config    Config
 	since     time.Time
 	stopChan  chan bool
+	exitChan  chan bool
 	collector instrument.Collector
 }
 
@@ -53,12 +55,13 @@ func DefaultCollector() prometheus.Collector {
 
 func DefaultConfig() Config {
 	return Config{
-		FilePath:         config.ConfigurationFile(),
-		BootstrapServers: config.BootstrapServers(),
-		GroupID:          config.GroupID(),
-		SchedulesTopics:  config.SchedulesTopics(),
-		SessionTimeout:   config.SessionTimeout(),
-		HistoryTopic:     config.HistoryTopic(),
+		FilePath:              config.ConfigurationFile(),
+		BootstrapServers:      config.BootstrapServers(),
+		GroupID:               config.GroupID(),
+		SchedulesTopics:       config.SchedulesTopics(),
+		SessionTimeout:        config.SessionTimeout(),
+		HistoryTopic:          config.HistoryTopic(),
+		ScheduleGraceInterval: uint(config.ScheduleGraceInterval()),
 	}
 }
 
@@ -79,12 +82,15 @@ func NewRunner(c Config, since time.Time, collector instrument.Collector) *Runne
 		config:    c,
 		since:     since,
 		stopChan:  make(chan bool),
+		exitChan:  make(chan bool),
 		collector: collector,
 	}
 }
 
 func (r Runner) Close() error {
 	r.stopChan <- true
+	<-r.exitChan
+	log.Printf("kafka runner closed")
 	return nil
 }
 
@@ -94,6 +100,10 @@ type closer interface {
 }
 
 func (r *Runner) Start() error {
+	defer func() {
+		r.exitChan <- true
+	}()
+
 	var configFile config.File
 	var err error
 	if r.config.FilePath != "" {
@@ -129,7 +139,13 @@ func (r *Runner) Start() error {
 	}
 	defer store.Close()
 
-	sch := scheduler.New(store, r.collector)
+	var outdatedStrategy scheduler.OutdatedScheduleStrategy
+	if i := r.config.ScheduleGraceInterval; i != 0 {
+		fmt.Printf("@@@ %v\n", i)
+		outdatedStrategy = scheduler.NewOutdatedScheduleStrategyBySecond(i)
+	}
+
+	sch := scheduler.New(store, r.collector, outdatedStrategy)
 	sch.Start(r.since)
 
 	srv := rest.New(&sch)
@@ -146,6 +162,7 @@ loop:
 			}
 			handler.Handle(event)
 		case <-r.stopChan:
+			log.Printf("closing kafka runner")
 			err := srv.Stop()
 			if err != nil {
 				log.Errorf("error when stopping api server: %v", err)
