@@ -196,6 +196,102 @@ go run ./cmd/mini
 ```ruby
 docker run etf1/kafka-message-scheduler:mini
 ```
+# kubernetes deployment
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+  namespace: default
+data:
+  BOOTSTRAP_SERVERS: localhost:9092
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-message-scheduler
+  namespace: default
+  labels:
+    app: kafka-message-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-message-scheduler
+  template:
+    metadata:
+      labels:
+        app: kafka-message-scheduler
+    spec:
+      containers:
+      - name: kafka-message-scheduler
+        image: etf1/kafka-message-scheduler:v0.0.6
+        envFrom:
+        - configMapRef:
+            name: env-config
+```
+with yaml file
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+  namespace: default
+data:
+  BOOTSTRAP_SERVERS: localhost:9092
+  CONFIGURATION_FILE: /app/config.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yaml-config
+  namespace: default
+data:
+  config.yaml: |
+    kafka.common.configuration:
+        sasl.mechanisms: PLAIN
+        sasl.username: username
+        sasl.password: password
+        security.protocol: SASL_SSL
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-message-scheduler
+  namespace: default
+  labels:
+    app: kafka-message-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-message-scheduler
+  template:
+    metadata:
+      labels:
+        app: kafka-message-scheduler
+    spec:
+      containers:
+      - name: kafka-message-scheduler
+        image: etf1/kafka-message-scheduler:v0.0.6
+        envFrom:
+        - configMapRef:
+            name: env-config
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config.yaml
+          subPath: config.yaml        
+        ports:
+        - containerPort: 8000
+      volumes:
+      - name: config-volume
+        configMap:
+          name: yaml-config
+
+```
+
 # Admin GUI
 
 An admin GUI is available on another git repository for viewing schedulers info and schedules. For more information: https://github.com/etf1/kafka-message-scheduler-admin
