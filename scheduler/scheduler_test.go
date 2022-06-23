@@ -846,7 +846,7 @@ loop:
 				evt,
 				epoch,
 			})
-		case <-time.After(5 * time.Second):
+		case <-time.After(60 * time.Second):
 			break loop
 		}
 	}
