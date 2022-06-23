@@ -294,4 +294,5 @@ spec:
 
 # Admin GUI
 
+![scheduler-admin](https://github.com/etf1/kafka-message-scheduler-admin/blob/main/docs/screenshots/two.png?raw=true)
 An admin GUI is available on another git repository for viewing schedulers info and schedules. For more information: https://github.com/etf1/kafka-message-scheduler-admin
