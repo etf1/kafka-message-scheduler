@@ -80,7 +80,7 @@ func TestDefaultKafkaRunner(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	epoch := time.Now().Add(10 * time.Second).Unix()
 	msg1 := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
@@ -147,7 +147,7 @@ func TestDefaultKafkaRunner_resilience(t *testing.T) {
 	msgs := make([]*confluent.Message, 0)
 
 	// wait for init
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	delay := time.Now().Add(5 * time.Second).Unix()
 
@@ -235,7 +235,7 @@ func TestDefaultKafkaRunner_yaml_configuration(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	epoch := time.Now().Add(10 * time.Second).Unix()
 	msg := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
@@ -287,7 +287,7 @@ func TestDefaultKafkaRunner_issue30(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	epoch := time.Now().Add(-1 * time.Second).Unix()
 	msg := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)
@@ -382,7 +382,7 @@ func TestDefaultKafkaRunner_issue31(t *testing.T) {
 				}
 			}()
 
-			time.Sleep(10 * time.Second)
+			time.Sleep(30 * time.Second)
 
 			epoch := time.Now().Add(c.epochDuration).Unix()
 			msg := fullMessage(schedulesTopic, scheduleKey, someValue, epoch, targetTopic, targetKey)

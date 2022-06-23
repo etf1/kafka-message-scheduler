@@ -901,7 +901,7 @@ loop:
 				evt,
 				epoch,
 			})
-		case <-time.After(15 * time.Second):
+		case <-time.After(60 * time.Second):
 			t.Logf("select timeout")
 			break loop
 		}
