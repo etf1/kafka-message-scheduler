@@ -1,4 +1,4 @@
-![Go](https://github.com/etf1/kafka-message-scheduler/workflows/Go/badge.svg) [![Go Reference](https://pkg.go.dev/badge/github.com/etf1/kafka-message-scheduler.svg)](https://pkg.go.dev/github.com/etf1/kafka-message-scheduler) [![Go Report Card](https://goreportcard.com/badge/github.com/etf1/kafka-message-scheduler)](https://goreportcard.com/report/github.com/etf1/kafka-message-scheduler)[![codecov](https://codecov.io/gh/etf1/kafka-message-scheduler/branch/main/graph/badge.svg?token=QLJ7AKO2W9)](https://codecov.io/gh/etf1/kafka-message-scheduler)
+![Go](https://github.com/etf1/kafka-message-scheduler/workflows/Go/badge.svg) [![Go Reference](https://pkg.go.dev/badge/github.com/etf1/kafka-message-scheduler.svg)](https://pkg.go.dev/github.com/etf1/kafka-message-scheduler) [![Go Report Card](https://goreportcard.com/badge/github.com/etf1/kafka-message-scheduler)](https://goreportcard.com/report/github.com/etf1/kafka-message-scheduler)
 
 
 # Kafka message scheduler
