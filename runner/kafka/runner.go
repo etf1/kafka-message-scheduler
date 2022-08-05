@@ -81,8 +81,8 @@ func NewRunner(c Config, since time.Time, collector instrument.Collector) *Runne
 	return &Runner{
 		config:    c,
 		since:     since,
-		stopChan:  make(chan bool),
-		exitChan:  make(chan bool),
+		stopChan:  make(chan bool, 1),
+		exitChan:  make(chan bool, 1),
 		collector: collector,
 	}
 }
