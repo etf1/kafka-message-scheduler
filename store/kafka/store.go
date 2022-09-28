@@ -33,6 +33,7 @@ type Store struct {
 	*kafka.Consumer
 	events        chan store.Event
 	stopChan      chan bool
+	exitedChan    chan bool
 	resetTicker   resetTicker
 	pollTimeoutMs int
 	revoked       kafka.RevokedPartitions
@@ -68,6 +69,7 @@ func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topic
 	s := Store{
 		Consumer:      consumer,
 		stopChan:      make(chan bool),
+		exitedChan:    make(chan bool),
 		resetTicker:   resetTicker,
 		pollTimeoutMs: 10000,
 	}
@@ -80,13 +82,23 @@ func (ks *Store) Close() error {
 	defer log.Println("kafka store closed")
 	log.Println("kafka store closing ...")
 
-	// if ks.events is nil means that the go routine for events has never been launched
-	// so no need to signal in the stopChan, just close the consumer
+	// If ks.events is nil means that the go routine for events has never been launched
+	// so no need to signal in the stopChan.
 	if ks.events != nil {
 		ks.stopChan <- true
+		// Wait for the poller to exit before we close the consumer.  If we don't, the poller may
+		// segfault if it has not exited yet and still tries to poll the destroyed queue.
+		<-ks.exitedChan
+	}
+
+	// Close the consumer before closing the events channel, just in case the rebalance callback
+	// is still called with revoked partitions.
+	closeErr := ks.Consumer.Close()
+
+	if ks.events != nil {
 		close(ks.events)
 	}
-	return ks.Consumer.Close()
+	return closeErr
 }
 
 func (ks *Store) processMessage() {
@@ -161,6 +173,7 @@ func (ks *Store) Events() chan store.Event {
 	resetTicks := ks.resetTicker.ticks()
 
 	go func() {
+		defer func() { close(ks.exitedChan) }()
 		defer log.Printf("kafka store event loop exited ...")
 		for {
 			select {
