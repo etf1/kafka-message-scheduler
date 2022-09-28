@@ -36,8 +36,6 @@ type Store struct {
 	exitedChan    chan bool
 	resetTicker   resetTicker
 	pollTimeoutMs int
-	revoked       kafka.RevokedPartitions
-	assigned      kafka.AssignedPartitions
 }
 
 func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topics []string, groupID string, sessionTimeout int) (*Store, error) {
@@ -52,6 +50,7 @@ func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topic
 	finalCfg["session.timeout.ms"] = sessionTimeout
 	finalCfg["enable.auto.commit"] = false
 	finalCfg["go.events.channel.enable"] = false
+	finalCfg["partition.assignment.strategy"] = "cooperative-sticky"
 
 	consumer, err := kafka.NewConsumer(&finalCfg)
 	if err != nil {
