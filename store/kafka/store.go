@@ -51,19 +51,13 @@ func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topic
 	finalCfg["session.timeout.ms"] = sessionTimeout
 	finalCfg["enable.auto.commit"] = false
 	finalCfg["go.events.channel.enable"] = false
-	finalCfg["go.application.rebalance.enable"] = true
 
 	consumer, err := kafka.NewConsumer(&finalCfg)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create kafka consumer for the store: %w", err)
 	}
-	err = consumer.SubscribeTopics(topics, nil)
-	if err != nil {
-		return nil, fmt.Errorf("cannot subscribe to topics '%s': %w", topics, err)
-	}
 
 	resetTicker := newResetTicker()
-	resetTicker.start()
 
 	s := Store{
 		Consumer:      consumer,
@@ -71,6 +65,13 @@ func NewStore(kafkaConfiguration kafka.ConfigMap, bootstrapServers string, topic
 		resetTicker:   resetTicker,
 		pollTimeoutMs: 10000,
 	}
+
+	err = consumer.SubscribeTopics(topics, s.processRebalance)
+	if err != nil {
+		return nil, fmt.Errorf("cannot subscribe to topics '%s': %w", topics, err)
+	}
+
+	resetTicker.start()
 
 	return &s, nil
 }
@@ -117,6 +118,21 @@ func (ks *Store) processMessage() {
 		} else {
 			ks.events <- sch
 		}
+	case kafka.Error:
+		// TODO: sendError(err)
+		ks.events <- store.Error{
+			Event: Error{
+				error:     fmt.Errorf("received kafka error: %w", evt),
+				timestamp: time.Now().Unix(),
+			},
+		}
+	default:
+		log.Printf("Ignored: %+v", e)
+	}
+}
+
+func (ks *Store) processRebalance(consumer *kafka.Consumer, e kafka.Event) error {
+	switch evt := e.(type) {
 	case kafka.AssignedPartitions:
 		err := ks.assign(evt)
 		// TODO: sendError(err)
@@ -139,17 +155,10 @@ func (ks *Store) processMessage() {
 				},
 			}
 		}
-	case kafka.Error:
-		// TODO: sendError(err)
-		ks.events <- store.Error{
-			Event: Error{
-				error:     fmt.Errorf("received kafka error: %w", evt),
-				timestamp: time.Now().Unix(),
-			},
-		}
 	default:
-		log.Printf("Ignored: %+v", e)
+		log.Printf("Ignored rebalance-related event: %+v", e)
 	}
+	return nil
 }
 
 func (ks *Store) Events() chan store.Event {
