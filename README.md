@@ -28,7 +28,7 @@ Kafka message scheduler is simply using kafka topics. These topics contains all 
 * scheduler-target-topic: the topic to send the message to
 * scheduler-target-key: the key to use when sending the triggered schedule to the target topic
 
-That is all you need, the paylaod will be the one defined in the schedule message.
+That is all you need, the payload will be the one defined in the schedule message.
 Warning: if the payload of the message changes, a new schedule message should be send to the scheduler topic.
 
 Example:
@@ -60,6 +60,21 @@ The same message will also be produced to the 'history' topic for auditing.
 Once the message is triggered a tombstone message (nil payload) will also be produced in the scheduler topic for deleting the schedule.
 
 For GO there is a clientlib for wrapping your kafka messages, check [clientlib](clientlib/) for more details.
+
+# Architecture
+
+The scheduler is basically a proxy consumer with its own topic. 
+
+The scheduler reads the topic from the beginning at startup and every day at 00:00 am and it stores in memory the schedules planned for the current day. It will also watch new incoming messages and process only messages for the current day by adding, updating or deleting schedules in the memory store. Once a schedule is triggered, the schedule is deleted in the kafka topic with a tombstone message (nil payload).
+
+This ensures the scheduler is stateless and can be killed and started at any time without losing messages.
+All state of scheduled messages is stored in Kafka.
+
+The max memory usage of the scheduler is ~ 'C + n * M'
+
+Where C is a constant minimal memory footprint 
+n is the max number of messages scheduled in a single day
+M is the average size per scheduled message
 
 # High availability
 
