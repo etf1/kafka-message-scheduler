@@ -94,14 +94,17 @@ The scheduler can be configured with environment variables:
 
 | Env. Variable             | Default          | Description                                                                                  |
 |---------------------------|------------------|----------------------------------------------------------------------------------------------|
-| `CONFIGURATION_FILE`      |                  | Optional path to a YAML configuration file (see below)                                       |
 | `BOOTSTRAP_SERVERS`       | `localhost:9092` | Kafka bootstrap servers list separated by comma                                              |
-| `SCHEDULES_TOPICS`        | `schedules`      | Topic list for incoming schedules separated by comma                                         |
-| `SINCE_DELTA`             | `0`              | Number of days to go back for considering missed schedules (0:today, -1: yesterday, etc ...) |
+| `CONFIGURATION_FILE`      |                  | Optional path to a YAML configuration file (see below)                                       |
+| `GRAYLOG_SERVER`          |                  | Optional Graylog server address                                                              |
 | `GROUP_ID`                | `scheduler-cg`   | Consumer group id for the scheduler consumer                                                 |
-| `METRICS_HTTP_ADDR`       | `:8001`          | HTTP address where prometheus metrics will be exposed (URI /metrics)                         |
 | `HISTORY_TOPIC`           | `history`        | Topic name where a copy of triggered schedules will be kept for auditing                     |
+| `METRICS_ADDR`            | `:8001`          | HTTP address where prometheus metrics will be exposed (URI `/metrics`)                       |
+| `SERVER_ADDR`             | `:8000`          | HTTP address where REST API server will be exposed (URI `/schedules`)                        |
+| `SESSION_TIMEOUT`         | `6000`           | Session timeout value for librdkafka consumer configuration value `session.timeout.ms`       |
+| `SCHEDULES_TOPICS`        | `schedules`      | Topic list for incoming schedules separated by comma                                         |
 | `SCHEDULE_GRACE_INTERVAL` |                  | Interval to allow schedule with outdated epoch, grace interval: now-grace_interval and now   |
+| `SINCE_DELTA`             | `0`              | Number of days to go back for considering missed schedules (0:today, -1: yesterday, etc ...) |
 
 ## Schedule grace interval
 A number of second between 0 and n, if you want to allow outdated schedules with 3s (grace interval will be between now-3s and now), then set the value
