@@ -92,52 +92,36 @@ func TestMiniRunner_schedules(t *testing.T) {
 		}
 		exitchan <- true
 	}()
+	defer func() {
+		runner.Close()
+		<-exitchan
+	}()
 
 	// wait for the goroutine to be scheduled
 	time.Sleep(1 * time.Second)
 
-	resp, err := getSchedules(1 * time.Second)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	defer resp.Body.Close()
+	var res []schedule
+	var err error
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected status code: %v", resp.StatusCode)
-	}
+	// retry 5 times, and give up
+	for i := 1; i <= 5; i++ {
+		res, err = getSchedules(1 * time.Second)
+		if err != nil {
+			t.Logf("get schedules failed: %v", err)
+		}
 
-	type schedule struct {
-		ID          string `json:"id"`
-		Epoch       int64  `json:"epoch"`
-		Timestamp   int64  `json:"timestamp"`
-		TargetTopic string `json:"target-topic"`
-		TargetKey   string `json:"target-key"`
-		Topic       string `json:"topic"`
-		Value       []byte `json:"value"`
-	}
+		if v := len(res); v == 0 {
+			t.Logf("schedules not found")
+		} else {
+			t.Logf("schedules found: %v", v)
+			break
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	t.Logf("http response body: %s", body)
-
-	res := []schedule{}
-	err = json.NewDecoder(bytes.NewReader(body)).Decode(&res)
-	if err != nil {
-		t.Fatalf("unable to unmarshall json body: %v %+v", err, res)
+		time.Sleep(time.Duration(i) * time.Second)
+		t.Logf("retries...")
 	}
 
 	if v := len(res); v == 0 {
-		t.Fatalf("unexpected list length: %v", v)
-	}
-loop:
-	for {
-		select {
-		case <-time.After(2 * time.Second):
-			runner.Close()
-		case <-exitchan:
-			break loop
-		}
+		t.Errorf("unexpected list length: %v", v)
 	}
 }

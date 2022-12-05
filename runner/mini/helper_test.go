@@ -1,7 +1,11 @@
 package mini_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -10,12 +14,43 @@ import (
 	"github.com/etf1/kafka-message-scheduler/config"
 )
 
-func getInfo(timeout time.Duration) (resp *http.Response, err error) {
+type schedule struct {
+	ID          string `json:"id"`
+	Epoch       int64  `json:"epoch"`
+	Timestamp   int64  `json:"timestamp"`
+	TargetTopic string `json:"target-topic"`
+	TargetKey   string `json:"target-key"`
+	Topic       string `json:"topic"`
+	Value       []byte `json:"value"`
+}
+
+func getInfo(timeout time.Duration) (*http.Response, error) {
 	return get("/info", timeout)
 }
 
-func getSchedules(timeout time.Duration) (resp *http.Response, err error) {
-	return get("/schedules", timeout)
+func getSchedules(timeout time.Duration) ([]schedule, error) {
+	resp, err := get("/schedules", timeout)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request failed with status code: %v", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("readall failed: %v", err)
+	}
+
+	res := []schedule{}
+	err = json.NewDecoder(bytes.NewReader(body)).Decode(&res)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshall json body: %v %+v", err, res)
+	}
+
+	return res, nil
 }
 
 func get(path string, timeout time.Duration) (*http.Response, error) {
