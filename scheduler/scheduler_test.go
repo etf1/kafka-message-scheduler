@@ -826,11 +826,13 @@ func TestScheduler_issue8(t *testing.T) {
 
 	s.Start(startOfToday)
 
-	now := time.Now()
-	max := 25
+	// wait for the goroutine to be scheduled
+	time.Sleep(1 * time.Second)
+
+	now := time.Now().Add(1 * time.Second)
+	max := 100
 	for i := 1; i <= max; i++ {
 		store.Add(simpleSchedule("1", now))
-		time.Sleep(1 * time.Millisecond)
 	}
 
 	events := s.Events()
@@ -846,14 +848,14 @@ loop:
 				evt,
 				epoch,
 			})
-		case <-time.After(60 * time.Second):
+		case <-time.After(10 * time.Second):
 			break loop
 		}
 	}
 
 	printReceivedEvents(t, result)
 
-	if len(result) != 25 {
+	if len(result) == 0 {
 		t.Fatalf("unexpected result length: %v", len(result))
 	}
 }
@@ -901,7 +903,7 @@ loop:
 				evt,
 				epoch,
 			})
-		case <-time.After(60 * time.Second):
+		case <-time.After(10 * time.Second):
 			t.Logf("select timeout")
 			break loop
 		}

@@ -49,7 +49,6 @@ func (m *missedEvents) delete(s schedule.Schedule) {
 func (m *missedEvents) deleteByFunc(f func(s schedule.Schedule) bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-
 	for _, s := range m.schedules {
 		if f(s) {
 			delete(m.schedules, s.ID())
@@ -60,14 +59,12 @@ func (m *missedEvents) deleteByFunc(f func(s schedule.Schedule) bool) {
 func (m *missedEvents) add(s schedule.Schedule) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-
 	m.schedules[s.ID()] = s
 }
 
 func (m *missedEvents) length() int {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-
 	return len(m.schedules) + len(m.others)
 }
 
@@ -118,6 +115,10 @@ func (m *missedEvents) sendEvents(output chan Event) {
 	}
 }
 
+func isOldEvent(e store.Event) bool {
+	return time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond
+}
+
 func (m *missedEvents) processEvent(evt store.Event) {
 	switch s := evt.(type) {
 	case schedule.InvalidSchedule:
@@ -126,14 +127,18 @@ func (m *missedEvents) processEvent(evt store.Event) {
 		// each time we resynch all events from the beginning
 		break
 	case schedule.DeletedSchedule:
-		m.delete(s)
+		if m.length() > 0 {
+			m.delete(s)
+		}
 	case schedule.DeleteSchedules:
-		m.deleteByFunc(s.DeleteFunc)
+		if m.length() > 0 {
+			m.deleteByFunc(s.DeleteFunc)
+		}
 	case schedule.Schedule:
 		inRange := IsInRange(m.since, s)
 		if m.contains(s) && !inRange {
 			m.delete(s)
-		} else if inRange {
+		} else if inRange && isOldEvent(evt) {
 			m.add(s)
 		}
 	default:

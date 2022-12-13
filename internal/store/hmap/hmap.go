@@ -38,17 +38,6 @@ func (h Hmap) Delete(s schedule.Schedule) {
 
 // DeleteByFunc triggers the special event schedule.DeleteSchedules
 // for the specified schedule
-/*
-func (h Hmap) DeleteByFunc(s schedule.Schedule) {
-	h.events <- schedule.DeleteSchedules{
-		Time: time.Now(),
-		DeleteFunc: func(sch schedule.Schedule) bool {
-			return sch.ID() == s.ID()
-		},
-	}
-}
-*/
-
 func (h Hmap) DeleteByFunc(f func(sch schedule.Schedule) bool) {
 	h.events <- schedule.DeleteSchedules{
 		Time:       time.Now(),

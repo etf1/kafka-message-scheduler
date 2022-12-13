@@ -141,8 +141,7 @@ func (sch Scheduler) processMissedEvent(e Event) {
 
 // processMissedEvent process store events
 func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvents chan store.Event) {
-	// if the event is old, send to the missed events for processing
-	if time.Since(time.Unix(e.Timestamp(), 0)) > 1000*time.Millisecond {
+	if isOldEvent(e) {
 		coldEvents <- e
 		return
 	}
@@ -153,14 +152,10 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 		sch.Inc(instrument.InvalidSchedule)
 	case schedule.DeleteSchedules:
 		sch.Timers.DeleteByFunc(evt.DeleteFunc)
-		if sch.missedEvents.length() > 0 {
-			coldEvents <- evt
-		}
+		coldEvents <- evt
 	case schedule.DeletedSchedule:
 		sch.Timers.Delete(evt)
-		if sch.missedEvents.contains(evt.Schedule) {
-			coldEvents <- evt
-		}
+		coldEvents <- evt
 		sch.Inc(instrument.DeletedSchedule)
 	// should be at the last position
 	case schedule.Schedule:
@@ -175,9 +170,7 @@ func (sch Scheduler) processStoreEvent(since time.Time, e store.Event, coldEvent
 				break
 			}
 		}
-		if sch.missedEvents.contains(evt) {
-			coldEvents <- evt
-		}
+		coldEvents <- evt
 	default:
 		sch.events <- evt
 		sch.Inc(instrument.Other)
