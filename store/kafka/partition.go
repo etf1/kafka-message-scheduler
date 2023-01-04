@@ -36,61 +36,59 @@ import (
 // partition 1 was already in our scope so no offset reset
 
 func (ks *Store) reset() error {
-	log.Printf("reset currently assigned=%v", ks.assigned.Partitions)
-
-	for i := range ks.assigned.Partitions {
-		tp := ks.assigned.Partitions[i]
-		ks.assigned.Partitions[i].Offset = 0
-		log.Printf("resetting offset to 0 for %+v", tp)
+	assigned, err := ks.Assignment()
+	if err != nil {
+		return err
 	}
-	log.Printf("calling assign %v with %v", ks.Consumer, ks.assigned.Partitions)
-	return ks.Assign(ks.assigned.Partitions)
+	log.Printf("reset currently assigned to 0 offset=%v", assigned)
+
+	for i := range assigned {
+		assigned[i].Offset = 0
+	}
+	// At this time, we have to loop and seek each partition individually.  When
+	//
+	//     https://github.com/confluentinc/confluent-kafka-go/issues/902
+	//     Add SeekPartitions wrapper for rd_kafka_seek_partitions function to support seeking
+	//     multiple partitions at a time
+	//
+	// is addressed, we can just pass the entire assigned variable to the proposed SeekPartitions
+	// function instead of having this loop here.
+	for i := range assigned {
+		log.Printf("calling Seek %v with %v", ks.Consumer, assigned[i])
+		err := ks.Seek(assigned[i], 0)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (ks *Store) revoke(revoked kafka.RevokedPartitions) error {
-	ks.revoked = revoked
-	log.Printf("revoke paritions=%v with current assigned=%v", ks.revoked.Partitions, ks.assigned.Partitions)
-	return ks.Unassign()
+	log.Printf("revoke partitions=%v due to assignment lost=%v", revoked.Partitions, ks.AssignmentLost())
+
+	// send DeleteSchedules event for deleted partitions
+	ks.events <- schedule.DeleteSchedules{
+		Time: time.Now(),
+		DeleteFunc: func(s schedule.Schedule) bool {
+			if sch, ok := s.(kafka_schedule.Schedule); ok && isIn(sch.TopicPartition, revoked.Partitions) {
+				return true
+			}
+			return false
+		},
+	}
+
+	log.Printf("calling IncrementalUnassign %v with %v", ks.Consumer, revoked.Partitions)
+	return ks.IncrementalUnassign(revoked.Partitions)
 }
 
 func (ks *Store) assign(assigned kafka.AssignedPartitions) error {
-	ks.assigned = assigned
-
-	log.Printf("assign partitions=%v with current revoked=%v", ks.assigned.Partitions, ks.revoked.Partitions)
-
-	// find deleted partitions : revoked partitions which are not in assigned list
-	deleted := minus(ks.revoked.Partitions, ks.assigned.Partitions)
-
-	// find new assigned partitions : assigned partitions which are not revoked
-	added := minus(ks.assigned.Partitions, ks.revoked.Partitions)
-
-	// send DeleteSchedules event for deleted paritions
-	if len(deleted) != 0 {
-		ks.events <- schedule.DeleteSchedules{
-			Time: time.Now(),
-			DeleteFunc: func(s schedule.Schedule) bool {
-				if sch, ok := s.(kafka_schedule.Schedule); ok && isIn(sch.TopicPartition, deleted) {
-					return true
-				}
-				return false
-			},
-		}
-	}
+	log.Printf("incremental assign partitions and reset offset to 0 for=%v", assigned.Partitions)
 
 	// for all newly assigned partitions process all from the beginning (reset offset 0)
-	if len(ks.assigned.Partitions) != 0 {
-		for i := range ks.assigned.Partitions {
-			tp := ks.assigned.Partitions[i]
-			// reset offset=0 for all newly assigned partitions
-			// partitions not new keep the existing offset
-			if isIn(tp, added) {
-				ks.assigned.Partitions[i].Offset = 0
-				log.Printf("resetting offset to 0 for %+v", tp)
-			}
-		}
-		log.Printf("calling assign %v with %v", ks.Consumer, ks.assigned.Partitions)
-		return ks.Assign(ks.assigned.Partitions)
+	for i := range assigned.Partitions {
+		assigned.Partitions[i].Offset = 0
 	}
 
-	return nil
+	log.Printf("calling IncrementalAssign %v with %v", ks.Consumer, assigned.Partitions)
+	return ks.IncrementalAssign(assigned.Partitions)
 }
