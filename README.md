@@ -249,7 +249,7 @@ spec:
         - configMapRef:
             name: env-config
 ```
-with yaml file
+with embedded yaml config file
 
 ```yaml
 apiVersion: v1
