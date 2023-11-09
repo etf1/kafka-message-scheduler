@@ -61,6 +61,15 @@ Once the message is triggered a tombstone message (nil payload) will also be pro
 
 For GO there is a clientlib for wrapping your kafka messages, check [clientlib](clientlib/) for more details.
 
+ATTENTION !!
+
+If you produce your messages using a Java or JavaScript library, you will need to pay attention to the partitioning of the producer for the scheduler. The scheduler is written in go and uses the official kafka library of confluent which is based on rdkafka, and the partitioning algorithm used by its producer is by default `consistent_random`. But most of java or javascript library is using `murmur2_random` algorithm. So configure the scheduler accordingly as follows to avoid issues:
+```
+export CONFIGURATION_FILE=config.yaml
+cat config.yaml
+kafka.producer.configuration:
+    partitioner: murmur2_random
+```
 # Architecture
 
 The scheduler is basically a proxy consumer with its own topic. 
