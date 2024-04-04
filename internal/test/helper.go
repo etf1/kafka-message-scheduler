@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
+	confluent "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/etf1/kafka-message-scheduler/internal/helper"
 	"github.com/etf1/kafka-message-scheduler/schedule/kafka"
 	kafka_store "github.com/etf1/kafka-message-scheduler/store/kafka"

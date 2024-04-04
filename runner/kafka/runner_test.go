@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
+	confluent "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	hmapcoll "github.com/etf1/kafka-message-scheduler/internal/collector/hmap"
 	"github.com/etf1/kafka-message-scheduler/internal/helper"
 	"github.com/etf1/kafka-message-scheduler/internal/test"
