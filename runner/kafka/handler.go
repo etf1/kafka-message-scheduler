@@ -10,7 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	confluent "github.com/confluentinc/confluent-kafka-go/kafka"
+	confluent "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/etf1/kafka-message-scheduler/schedule"
 	"github.com/etf1/kafka-message-scheduler/schedule/kafka"
 	"github.com/etf1/kafka-message-scheduler/scheduler"
