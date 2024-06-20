@@ -171,6 +171,18 @@ BOOTSTRAP_SERVERS="kafka:9092" go run ./cmd/kafka
 docker run -e BOOTSTRAP_SERVERS="kafka:9092" etf1/kafka-message-scheduler
 ```
 
+* docker-compose :
+
+start command
+```ruby
+docker-compose -f docker-compose.local.yml up -d
+```
+
+stop command
+```ruby
+docker-compose -f docker-compose.local.yml down -v
+```
+
 * as code in your go program:
 
 ```go
