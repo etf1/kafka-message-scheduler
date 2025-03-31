@@ -8,4 +8,5 @@ FROM alpine
 RUN apk --no-cache update
 WORKDIR /bin
 COPY --from=builder /build/bin/scheduler scheduler
+USER 1001
 CMD ["./scheduler"]
