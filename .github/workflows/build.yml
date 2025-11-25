@@ -13,4 +13,8 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4      
       - name: Build & test  
-        run: make tests.docker
+        run: make builds
+      - name: Build & test
+        run: make builds
+      - name: Build docker
+        run: make docker
