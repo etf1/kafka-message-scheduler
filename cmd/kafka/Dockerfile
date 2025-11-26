@@ -7,6 +7,6 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 make bin
 FROM alpine:3.21
 RUN apk --no-cache update
 WORKDIR /project
-COPY --from=builder /project/scheduler scheduler
+COPY --from=builder /project/bin/scheduler scheduler
 USER 1001
 CMD ["./scheduler"]
